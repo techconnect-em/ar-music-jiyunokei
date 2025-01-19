@@ -5,17 +5,17 @@
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script>
         // マーカー画像のURLと音源ファイルのURLを定義 (後で設定)
-        const markerImageURL = 'YOUR_MARKER_IMAGE_URL';
-        const audioFileURL = 'YOUR_AUDIO_FILE_URL.mp3';
+        const markerImageURL = 'https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/shindy_emotion_httpss.mj.runs2rSdFnNhpw_Put_a_VR_headset_on_t_70643b9f-9a4f-4e42-b118-cb2d55a679ed_2.png?v=1737269093445';
+        const audioFileURL = 'https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119';
     </script>
 </head>
-<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
-    <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
-        <a-marker type='pattern' url='${markerImageURL}'>
+<body style="margin : 0px; overflow: hidden; font-family: Monospace;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+        <a-marker type="pattern' url='${markerImageURL}">
             <a-entity
-                geometry='primitive: sphere; radius: 0.5;'
-                material='color: blue'
-                animation__scale='property: scale; to: 1.5 1.5 1.5; dur: 1000; easing: easeOutElastic; startEvents: play'></a-entity>
+                geometry="primitive: sphere; radius: 0.5;"
+                material="color: blue"
+                animation__scale="property: scale; to: 1.5 1.5 1.5; dur: 1000; easing: easeOutElastic; startEvents: play"></a-entity>
         </a-marker>
         <a-entity camera></a-entity>
         <audio id="audio" src="${audioFileURL}" preload="auto"></audio>
