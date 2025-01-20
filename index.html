@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* 既存のスタイルは変更なし */
+        /* スタイルは変更なし */
         body { margin: 0; }
         .example-container {
             position: absolute;
@@ -101,21 +101,6 @@
         const scene = document.querySelector('a-scene');
         const sphere = document.getElementById('visualSphere');
 
-        let audioContext = null;
-        let analyser = null;
-        let audioSource = null;
-
-        function setupAudio() {
-            if (audioContext) return;
-
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioContext.createAnalyser();
-            analyser.fftSize = 64;
-            audioSource = audioContext.createMediaElementSource(audio);
-            audioSource.connect(analyser);
-            analyser.connect(audioContext.destination);
-        }
-
         function updateAudioButton() {
             const icon = audioControl.querySelector('i');
             icon.className = audio.paused ? 'fas fa-play' : 'fas fa-pause';
@@ -123,9 +108,6 @@
 
         audioControl.addEventListener('click', async () => {
             try {
-                setupAudio();
-                await audioContext.resume();
-
                 if (audio.paused) {
                     await audio.play();
                 } else {
@@ -137,30 +119,28 @@
             }
         });
 
-        // カスタムコンポーネントの定義
-        AFRAME.registerComponent('audio-visualizer', {
+        // より複雑なアニメーション
+        AFRAME.registerComponent('complex-animation', {
             tick: function() {
-                if (!analyser || audio.paused) return;
-
-                const dataArray = new Uint8Array(analyser.frequencyBinCount);
-                analyser.getByteFrequencyData(dataArray);
-                
-                // 低周波数帯のデータを使用
-                const bassData = dataArray.slice(0, 8);
-                const bassAvg = bassData.reduce((a, b) => a + b, 0) / bassData.length;
-                
-                // スケール変更（より劇的に）
-                const scale = 1 + (bassAvg / 255) * 2;
-                this.el.setAttribute('scale', `${scale} ${scale} ${scale}`);
-                
-                // 透明度変更
-                const opacity = 0.5 + (bassAvg / 255) * 0.5;
-                this.el.setAttribute('opacity', opacity);
+                if (!audio.paused) {
+                    const time = Date.now() * 0.001;
+                    
+                    // 複数の正弦波を組み合わせてより複雑な動き
+                    const fastPulse = Math.sin(time * 8) * 0.15;  // 速い鼓動
+                    const slowPulse = Math.sin(time * 2) * 0.1;   // 遅い鼓動
+                    const microPulse = Math.sin(time * 16) * 0.05; // 微細な振動
+                    
+                    // すべての効果を組み合わせる
+                    const scale = 1 + fastPulse + slowPulse + microPulse;
+                    
+                    // スケールとオパシティを更新
+                    this.el.setAttribute('scale', `${scale} ${scale} ${scale}`);
+                    this.el.setAttribute('opacity', 0.7 + fastPulse);
+                }
             }
         });
 
-        // コンポーネントの適用
-        sphere.setAttribute('audio-visualizer', '');
+        sphere.setAttribute('complex-animation', '');
 
         scene.addEventListener('targetFound', () => {
             scanningOverlay.classList.add('fade-out');
@@ -170,7 +150,6 @@
             scanningOverlay.classList.remove('fade-out');
         });
 
-        // 音声の状態監視
         audio.addEventListener('play', updateAudioButton);
         audio.addEventListener('pause', updateAudioButton);
     </script>
