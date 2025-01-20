@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+<!-- head部分は変更なし -->
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image.prod.js"></script>
@@ -74,16 +75,29 @@
             vr-mode-ui="enabled: false" 
             device-orientation-permission-ui="enabled: false">
 
+            <a-assets>
+                <a-asset-item id="base-model" src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/base_basic_pbr.glb?v=1737412497932"></a-asset-item>
+            </a-assets>
+
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
             <a-entity mindar-image-target="targetIndex: 0">
+                <!-- スフィアを少し大きくして、より透明に -->
                 <a-sphere id="visualSphere" 
                     position="0 0 0" 
-                    radius="0.5"
+                    radius="0.55"
                     color="blue"
-                    opacity="0.8"
-                    material="metalness: 0.8; roughness: 0.2;"
-                    animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear">
+                    opacity="0.3"
+                    material="metalness: 0.8; roughness: 0.2; transparent: true;">
+                    <!-- モデルのスケールとポジションを調整 -->
+                    <a-entity
+                        id="base-entity"
+                        position="0 -0.1 0"
+                        scale="0.15 0.15 0.15"
+                        rotation="0 0 0"
+                        gltf-model="#base-model"
+                        animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
+                    </a-entity>
                 </a-sphere>
             </a-entity>
         </a-scene>
@@ -95,6 +109,7 @@
     </button>
 
     <script>
+        // スクリプト部分は変更なし
         const audioControl = document.getElementById('audio-control');
         const audio = document.getElementById('audio');
         const scanningOverlay = document.getElementById('scanning-overlay');
@@ -119,23 +134,18 @@
             }
         });
 
-        // より複雑なアニメーション
         AFRAME.registerComponent('complex-animation', {
             tick: function() {
                 if (!audio.paused) {
                     const time = Date.now() * 0.001;
                     
-                    // 複数の正弦波を組み合わせてより複雑な動き
-                    const fastPulse = Math.sin(time * 8) * 0.15;  // 速い鼓動
-                    const slowPulse = Math.sin(time * 2) * 0.1;   // 遅い鼓動
-                    const microPulse = Math.sin(time * 16) * 0.05; // 微細な振動
+                    const fastPulse = Math.sin(time * 8) * 0.15;
+                    const slowPulse = Math.sin(time * 2) * 0.1;
+                    const microPulse = Math.sin(time * 16) * 0.05;
                     
-                    // すべての効果を組み合わせる
                     const scale = 1 + fastPulse + slowPulse + microPulse;
                     
-                    // スケールとオパシティを更新
                     this.el.setAttribute('scale', `${scale} ${scale} ${scale}`);
-                    this.el.setAttribute('opacity', 0.7 + fastPulse);
                 }
             }
         });
