@@ -5,6 +5,8 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image.prod.js"></script>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
+    <!-- Font Awesome の読み込み -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { margin: 0; }
         .example-container {
@@ -40,16 +42,45 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
             transition: all 0.3s ease;
         }
+        #audio-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            z-index: 1000;
+            font-size: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            display: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #audio-control:active {
+            transform: scale(0.95);
+        }
         .fade-out {
             opacity: 0 !important;
             pointer-events: none;
+        }
+        /* アイコンのスタイル調整 */
+        .fa-play {
+            margin-left: 4px; /* 再生アイコンを中央に調整 */
         }
     </style>
 </head>
 
 <body>
     <div class="example-container">
-        <audio id="audio" src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119" preload="auto" loop></audio>
+        <audio id="audio" preload="auto" loop>
+            <source src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119" type="audio/mpeg">
+        </audio>
 
         <a-scene 
             mindar-image="imageTargetSrc: https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/targets.mind?v=1737373928367;"
@@ -76,77 +107,70 @@
 
     <div id="scanning-overlay">マーカーをスキャンしてください</div>
     <button id="start-button">タップして開始</button>
+    <button id="audio-control">
+        <i class="fas fa-play"></i>
+    </button>
 
     <script>
         const startButton = document.getElementById('start-button');
+        const audioControl = document.getElementById('audio-control');
         const audio = document.getElementById('audio');
         const scanningOverlay = document.getElementById('scanning-overlay');
         const scene = document.querySelector('a-scene');
-        let isFirst = true;
+        let isAudioInitialized = false;
 
-        // シーンの準備完了時の処理
-        scene.addEventListener('loaded', () => {
-            console.log('Scene is loaded');
+        // オーディオコントロールボタンの処理
+        function updateAudioButton() {
+            const icon = audioControl.querySelector('i');
+            icon.className = audio.paused ? 'fas fa-play' : 'fas fa-pause';
+        }
+
+        audioControl.addEventListener('click', async () => {
+            if (audio.paused) {
+                try {
+                    await audio.play();
+                } catch (error) {
+                    console.error('Audio play error:', error);
+                }
+            } else {
+                audio.pause();
+            }
+            updateAudioButton();
         });
 
         // 開始ボタンの処理
         startButton.addEventListener('click', async () => {
             startButton.style.display = 'none';
             
-            // 音声の準備
             try {
-                if (isFirst) {
-                    // 音声ファイルのプリロード
-                    audio.load();
-                    await audio.play();
-                    audio.pause();
-                    audio.currentTime = 0;
-                    isFirst = false;
-                }
+                // 音声の初期化
+                audio.load();
+                await audio.play();
+                audio.pause();
+                audio.currentTime = 0;
+                isAudioInitialized = true;
+                
+                // オーディオコントロールボタンを表示
+                audioControl.style.display = 'flex';
+                updateAudioButton();
             } catch (error) {
                 console.error('Audio initialization error:', error);
             }
         });
 
         // マーカー検出時の処理
-        scene.addEventListener('targetFound', async () => {
-            console.log('Target found');
+        scene.addEventListener('targetFound', () => {
             scanningOverlay.classList.add('fade-out');
-
-            // マーカー検出時に音声再生
-            try {
-                if (!isFirst) {
-                    if (audio.paused) {
-                        await audio.play();
-                        console.log('Audio started playing');
-                    }
-                }
-            } catch (error) {
-                console.error('Audio play error:', error);
-            }
         });
 
         // マーカーロスト時の処理
         scene.addEventListener('targetLost', () => {
-            console.log('Target lost');
             scanningOverlay.classList.remove('fade-out');
-            
-            // 音声の一時停止
-            if (!audio.paused) {
-                audio.pause();
-                console.log('Audio paused');
-            }
         });
 
-        // エラーハンドリング
-        audio.addEventListener('error', (e) => {
-            console.error('Audio error:', e);
-        });
-
-        // 音声の状態変化をログ出力
-        audio.addEventListener('play', () => console.log('Audio play event'));
-        audio.addEventListener('pause', () => console.log('Audio pause event'));
-        audio.addEventListener('ended', () => console.log('Audio ended event'));
+        // 音声の状態変化を監視
+        audio.addEventListener('play', updateAudioButton);
+        audio.addEventListener('pause', updateAudioButton);
     </script>
 </body>
 </html>
