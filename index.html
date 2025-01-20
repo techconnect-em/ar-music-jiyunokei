@@ -37,24 +37,12 @@
             border: none;
             z-index: 1000;
             font-size: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
         }
         .fade-out {
-            opacity: 0;
+            opacity: 0 !important;
             pointer-events: none;
-        }
-        #play-button {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 24px;
-            border-radius: 25px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            z-index: 1000;
-            font-size: 16px;
-            display: none;
         }
     </style>
 </head>
@@ -87,55 +75,78 @@
     </div>
 
     <div id="scanning-overlay">マーカーをスキャンしてください</div>
-    <button id="start-button">ARを開始</button>
-    <button id="play-button">音楽を再生</button>
+    <button id="start-button">タップして開始</button>
 
     <script>
         const startButton = document.getElementById('start-button');
-        const playButton = document.getElementById('play-button');
         const audio = document.getElementById('audio');
         const scanningOverlay = document.getElementById('scanning-overlay');
         const scene = document.querySelector('a-scene');
-        let canPlayAudio = false;
+        let isFirst = true;
 
-        // ARの開始
-        startButton.addEventListener('click', function() {
-            startButton.style.display = 'none';
-            playButton.style.display = 'block';
+        // シーンの準備完了時の処理
+        scene.addEventListener('loaded', () => {
+            console.log('Scene is loaded');
         });
 
-        // 音楽の初期化
-        playButton.addEventListener('click', async function() {
+        // 開始ボタンの処理
+        startButton.addEventListener('click', async () => {
+            startButton.style.display = 'none';
+            
+            // 音声の準備
             try {
-                await audio.play();
-                audio.pause();
-                canPlayAudio = true;
-                playButton.style.display = 'none';
-                scanningOverlay.classList.add('fade-in');
+                if (isFirst) {
+                    // 音声ファイルのプリロード
+                    audio.load();
+                    await audio.play();
+                    audio.pause();
+                    audio.currentTime = 0;
+                    isFirst = false;
+                }
             } catch (error) {
-                console.log("Audio initialization error:", error);
+                console.error('Audio initialization error:', error);
             }
         });
 
-        scene.addEventListener('targetFound', async function() {
+        // マーカー検出時の処理
+        scene.addEventListener('targetFound', async () => {
+            console.log('Target found');
             scanningOverlay.classList.add('fade-out');
-            if (canPlayAudio) {
-                try {
+
+            // マーカー検出時に音声再生
+            try {
+                if (!isFirst) {
                     if (audio.paused) {
                         await audio.play();
+                        console.log('Audio started playing');
                     }
-                } catch (error) {
-                    console.log("Play error:", error);
                 }
+            } catch (error) {
+                console.error('Audio play error:', error);
             }
         });
 
-        scene.addEventListener('targetLost', function() {
+        // マーカーロスト時の処理
+        scene.addEventListener('targetLost', () => {
+            console.log('Target lost');
             scanningOverlay.classList.remove('fade-out');
+            
+            // 音声の一時停止
             if (!audio.paused) {
                 audio.pause();
+                console.log('Audio paused');
             }
         });
+
+        // エラーハンドリング
+        audio.addEventListener('error', (e) => {
+            console.error('Audio error:', e);
+        });
+
+        // 音声の状態変化をログ出力
+        audio.addEventListener('play', () => console.log('Audio play event'));
+        audio.addEventListener('pause', () => console.log('Audio pause event'));
+        audio.addEventListener('ended', () => console.log('Audio ended event'));
     </script>
 </body>
 </html>
