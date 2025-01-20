@@ -20,52 +20,69 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 10px 20px;
             border-radius: 20px;
             z-index: 1000;
+            transition: opacity 0.3s ease;
         }
         #start-button {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 12px 24px;
+            border-radius: 25px;
             background: #007AFF;
             color: white;
             border: none;
             z-index: 1000;
             font-size: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .fade-out {
+            opacity: 0 !important;
+            pointer-events: none;
         }
     </style>
 </head>
 
 <body>
     <div class="example-container">
-        <audio id="audio" src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119" preload="auto"></audio>
+        <audio id="audio" preload="auto" loop>
+            <source src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119" type="audio/mpeg">
+        </audio>
 
-        <a-scene mindar-image="imageTargetSrc: https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/targets.mind?v=1737373928367; warmupTolerance: 5; missTolerance: 5;" embedded color-space="sRGB" renderer="colorManagement: true; physicallyCorrectLights: true;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-scene 
+            mindar-image="imageTargetSrc: https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/targets.mind?v=1737373928367; 
+            warmupTolerance: 5; 
+            missTolerance: 5;
+            filterMinCF: 0.0001; 
+            filterBeta: 0.001;"
+            embedded 
+            color-space="sRGB" 
+            renderer="colorManagement: true; physicallyCorrectLights: true;" 
+            vr-mode-ui="enabled: false" 
+            device-orientation-permission-ui="enabled: false">
+
+            <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="near: 0; far: 10000"></a-camera>
 
             <a-entity mindar-image-target="targetIndex: 0">
                 <a-sphere id="visualSphere" 
-                         position="0 0 0.1" 
-                         radius="0.1" 
-                         color="blue"
-                         opacity="0.8"
-                         animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear"
-                         animation__scale="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; easing: easeInOutQuad; loop: true">
+                    position="0 0 0.1" 
+                    radius="0.1" 
+                    color="blue"
+                    opacity="0.8"
+                    animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear"
+                    animation__scale="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; easing: easeInOutQuad; loop: true">
                 </a-sphere>
             </a-entity>
         </a-scene>
     </div>
 
-    <div id="scanning-overlay">
-        マーカーをスキャンしてください
-    </div>
-    
+    <div id="scanning-overlay">マーカーをスキャンしてください</div>
     <button id="start-button">タップして開始</button>
 
     <script>
@@ -80,53 +97,58 @@
         let dataArray;
         let isAudioInitialized = false;
 
-        // 開始ボタンのイベントハンドラ
-        startButton.addEventListener('click', async () => {
+        // 音声の初期化を単純化
+        async function initializeAudio() {
             try {
-                // AudioContextの初期化
+                await audio.play();
+                audio.pause(); // すぐにポーズ
+                
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                await audioContext.resume();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaElementSource(audio);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                analyser.fftSize = 256;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                isAudioInitialized = true;
                 
-                if (!isAudioInitialized) {
-                    analyser = audioContext.createAnalyser();
-                    const source = audioContext.createMediaElementSource(audio);
-                    source.connect(analyser);
-                    analyser.connect(audioContext.destination);
-                    analyser.fftSize = 256;
-                    dataArray = new Uint8Array(analyser.frequencyBinCount);
-                    isAudioInitialized = true;
-                }
-                
-                startButton.style.display = 'none';
-                console.log('Audio initialized successfully');
+                startButton.classList.add('fade-out');
+                setTimeout(() => startButton.style.display = 'none', 300);
             } catch (error) {
                 console.error('Audio initialization error:', error);
             }
-        });
+        }
 
+        startButton.addEventListener('click', initializeAudio);
+
+        // マーカー検出時の処理
         sceneEl.addEventListener('targetFound', async () => {
-            console.log("Target Found");
-            scanningOverlay.style.display = 'none';
+            scanningOverlay.classList.add('fade-out');
             
-            if (audioContext && isAudioInitialized) {
+            if (isAudioInitialized) {
                 try {
                     await audio.play();
-                    console.log('Audio playing');
+                    if (audioContext.state === 'suspended') {
+                        await audioContext.resume();
+                    }
                 } catch (err) {
                     console.error("Audio play error:", err);
                 }
             }
         });
 
+        // マーカーロスト時の処理
         sceneEl.addEventListener('targetLost', () => {
-            console.log("Target Lost");
-            scanningOverlay.style.display = 'block';
-            audio.pause();
+            scanningOverlay.classList.remove('fade-out');
+            if (audio.playing) {
+                audio.pause();
+            }
         });
 
+        // ビジュアライザーコンポーネント
         AFRAME.registerComponent('audio-visualizer', {
             tick: function() {
-                if (analyser && dataArray) {
+                if (analyser && dataArray && audio.playing) {
                     analyser.getByteFrequencyData(dataArray);
                     let average = Array.from(dataArray).reduce((a, b) => a + b, 0) / dataArray.length;
                     const scale = 1 + average / 256;
@@ -137,10 +159,12 @@
 
         sphere.setAttribute('audio-visualizer', '');
 
-        // デバッグ用のログ
-        window.addEventListener('error', (e) => {
-            console.error('Window error:', e);
-        });
+        // iOS Safariでの自動再生対策
+        document.addEventListener('touchstart', () => {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }, false);
     </script>
 </body>
 </html>
