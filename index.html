@@ -15,6 +15,30 @@
             width: 100%;
             height: 100%;
         }
+        #scanning-overlay {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 1000;
+        }
+        #start-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            z-index: 1000;
+            font-size: 16px;
+        }
     </style>
 </head>
 
@@ -22,15 +46,17 @@
     <div class="example-container">
         <audio id="audio" src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119" preload="auto"></audio>
 
-        <a-scene mindar-image="uiScanning: #scanning-overlay; imageTargetSrc: https://cdn.glitch.global/[https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/targets.mind?v=1737373928367];" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <a-scene mindar-image="imageTargetSrc: https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/targets.mind?v=1737373928367; warmupTolerance: 5; missTolerance: 5;" embedded color-space="sRGB" renderer="colorManagement: true; physicallyCorrectLights: true;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
             <a-entity mindar-image-target="targetIndex: 0">
                 <a-sphere id="visualSphere" 
-                         position="0 0 0" 
-                         radius="0.5" 
+                         position="0 0 0.1" 
+                         radius="0.1" 
                          color="blue"
-                         animation__scale="property: scale; to: 1.5 1.5 1.5; dur: 1000; easing: easeOutElastic; startEvents: play">
+                         opacity="0.8"
+                         animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear"
+                         animation__scale="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; easing: easeInOutQuad; loop: true">
                 </a-sphere>
             </a-entity>
         </a-scene>
@@ -39,34 +65,62 @@
     <div id="scanning-overlay">
         マーカーをスキャンしてください
     </div>
+    
+    <button id="start-button">タップして開始</button>
 
     <script>
+        const sceneEl = document.querySelector('a-scene');
+        const audio = document.getElementById('audio');
+        const sphere = document.getElementById('visualSphere');
+        const scanningOverlay = document.getElementById('scanning-overlay');
+        const startButton = document.getElementById('start-button');
+
         let audioContext;
         let analyser;
         let dataArray;
-        const audio = document.getElementById('audio');
-        const sphere = document.getElementById('visualSphere');
+        let isAudioInitialized = false;
 
-        const sceneEl = document.querySelector('a-scene');
-        sceneEl.addEventListener('targetFound', function() {
-            console.log("Target Found");
-            if (!audioContext) {
+        // 開始ボタンのイベントハンドラ
+        startButton.addEventListener('click', async () => {
+            try {
+                // AudioContextの初期化
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                const source = audioContext.createMediaElementSource(audio);
-                source.connect(analyser);
-                analyser.connect(audioContext.destination);
-                analyser.fftSize = 256;
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                await audioContext.resume();
+                
+                if (!isAudioInitialized) {
+                    analyser = audioContext.createAnalyser();
+                    const source = audioContext.createMediaElementSource(audio);
+                    source.connect(analyser);
+                    analyser.connect(audioContext.destination);
+                    analyser.fftSize = 256;
+                    dataArray = new Uint8Array(analyser.frequencyBinCount);
+                    isAudioInitialized = true;
+                }
+                
+                startButton.style.display = 'none';
+                console.log('Audio initialized successfully');
+            } catch (error) {
+                console.error('Audio initialization error:', error);
             }
-            
-            audioContext.resume().then(() => {
-                audio.play().catch(err => console.error("Audio play error:", err));
-            }).catch(err => console.error("AudioContext resume error:", err));
         });
 
-        sceneEl.addEventListener('targetLost', function() {
+        sceneEl.addEventListener('targetFound', async () => {
+            console.log("Target Found");
+            scanningOverlay.style.display = 'none';
+            
+            if (audioContext && isAudioInitialized) {
+                try {
+                    await audio.play();
+                    console.log('Audio playing');
+                } catch (err) {
+                    console.error("Audio play error:", err);
+                }
+            }
+        });
+
+        sceneEl.addEventListener('targetLost', () => {
             console.log("Target Lost");
+            scanningOverlay.style.display = 'block';
             audio.pause();
         });
 
@@ -75,13 +129,18 @@
                 if (analyser && dataArray) {
                     analyser.getByteFrequencyData(dataArray);
                     let average = Array.from(dataArray).reduce((a, b) => a + b, 0) / dataArray.length;
-                    const scale = 1 + average / 128;
+                    const scale = 1 + average / 256;
                     this.el.setAttribute('scale', `${scale} ${scale} ${scale}`);
                 }
             }
         });
 
         sphere.setAttribute('audio-visualizer', '');
+
+        // デバッグ用のログ
+        window.addEventListener('error', (e) => {
+            console.error('Window error:', e);
+        });
     </script>
 </body>
 </html>
