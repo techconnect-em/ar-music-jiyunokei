@@ -1,68 +1,87 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image.prod.js"></script>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body {
+            margin: 0;
+        }
+        .example-container {
+            overflow: hidden;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="example-container">
+        <audio id="audio" src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119" preload="auto"></audio>
+
+        <a-scene mindar-image="uiScanning: #scanning-overlay; imageTargetSrc: https://cdn.glitch.global/[https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/targets.mind?v=1737373928367];" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+            <a-entity mindar-image-target="targetIndex: 0">
+                <a-sphere id="visualSphere" 
+                         position="0 0 0" 
+                         radius="0.5" 
+                         color="blue"
+                         animation__scale="property: scale; to: 1.5 1.5 1.5; dur: 1000; easing: easeOutElastic; startEvents: play">
+                </a-sphere>
+            </a-entity>
+        </a-scene>
+    </div>
+
+    <div id="scanning-overlay">
+        マーカーをスキャンしてください
+    </div>
+
     <script>
-      // マーカー画像のURLと音源ファイルのURLを定義 (後で設定)
-      const markerImageURL =
-        "https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/TechConnect - 2.png?v=1737371871896";
-      const audioFileURL =
-        "https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119";
-    </script>
-  </head>
-  <body style="margin: 0px; overflow: hidden; font-family: Monospace">
-    <a-scene
-      embedded
-      arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-    >
-      <a-marker type="pattern' url='${markerImageURL}">
-        <a-entity
-          geometry="primitive: sphere; radius: 0.5;"
-          material="color: blue"
-          animation__scale="property: scale; to: 1.5 1.5 1.5; dur: 1000; easing: easeOutElastic; startEvents: play"
-        ></a-entity>
-      </a-marker>
-      <a-entity camera></a-entity>
-      <audio id="audio" src="${audioFileURL}" preload="auto"></audio>
-      <script>
-        const audio = document.getElementById("audio");
-        const audioContext = new (window.AudioContext ||
-          window.webkitAudioContext)();
-        const analyser = audioContext.createAnalyser();
-        const source = audioContext.createMediaElementSource(audio);
-        source.connect(analyser);
-        analyser.connect(audioContext.destination);
-        analyser.fftSize = 256;
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        const sphere = document.querySelector("a-sphere");
+        let audioContext;
+        let analyser;
+        let dataArray;
+        const audio = document.getElementById('audio');
+        const sphere = document.getElementById('visualSphere');
 
-        AFRAME.registerComponent("audio-visualizer", {
-          tick: function () {
-            analyser.getByteFrequencyData(dataArray);
-            let average = 0;
-            for (let i = 0; i < bufferLength; i++) {
-              average += dataArray[i];
+        const sceneEl = document.querySelector('a-scene');
+        sceneEl.addEventListener('targetFound', function() {
+            console.log("Target Found");
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaElementSource(audio);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                analyser.fftSize = 256;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
             }
-            average /= bufferLength;
-            const scale = 1 + average / 50;
-            this.el.setAttribute("scale", `${scale} ${scale} ${scale}`);
-          },
+            
+            audioContext.resume().then(() => {
+                audio.play().catch(err => console.error("Audio play error:", err));
+            }).catch(err => console.error("AudioContext resume error:", err));
         });
 
-        sphere.setAttribute("audio-visualizer", "");
+        sceneEl.addEventListener('targetLost', function() {
+            console.log("Target Lost");
+            audio.pause();
+        });
 
-        const marker = document.querySelector("a-marker");
-        marker.addEventListener("markerFound", function () {
-          audioContext.resume();
-          audio.play();
+        AFRAME.registerComponent('audio-visualizer', {
+            tick: function() {
+                if (analyser && dataArray) {
+                    analyser.getByteFrequencyData(dataArray);
+                    let average = Array.from(dataArray).reduce((a, b) => a + b, 0) / dataArray.length;
+                    const scale = 1 + average / 128;
+                    this.el.setAttribute('scale', `${scale} ${scale} ${scale}`);
+                }
+            }
         });
-        marker.addEventListener("markerLost", function () {
-          audio.pause();
-        });
-      </script>
-      <a-entity camera></a-entity>
-    </a-scene>
-  </body>
+
+        sphere.setAttribute('audio-visualizer', '');
+    </script>
+</body>
 </html>
