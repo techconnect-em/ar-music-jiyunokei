@@ -1,18 +1,19 @@
-        let audioContext, analyser, source;
+let audioContext, analyser, source;
         const audioControl = document.getElementById('audio-control');
         const audio = document.getElementById('audio');
         const scanningOverlay = document.getElementById('scanning-overlay');
         const scene = document.querySelector('a-scene');
         const sphere = document.getElementById('visualSphere');
         const model = document.getElementById('base-entity');
-        const lightningContainer = document.getElementById('lightning-container');
-        const FFT_SIZE = 128;
-        const numLines = 16; // 稲妻のライン数
-        const lightningSpeed = 0.5; // 稲妻の速度
-        const lightningWidth = 0.02;
-        const lightningColor = 'yellow';
-        let boxes = [];
-    
+        const equalizerContainer = document.getElementById('equalizer-container');
+         const mindarTarget = document.querySelector('[mindar-image-target]');
+
+         const FFT_SIZE = 128;
+        const numBars = FFT_SIZE / 2; // バーの数
+        const barWidth = 0.05;
+        const barColor = 'yellow';
+         const equalizerRadius = 0.8;
+        let bars = [];
 
         // 音声解析の初期化
         async function initAudioAnalyser() {
@@ -27,17 +28,18 @@
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
 
-                 // 稲妻ラインの作成
-                  try {
-                        for (let i = 0; i < numLines; i++) {
-                        const line = document.createElement('a-entity');
-                            line.setAttribute('geometry', 'primitive: line');
-                            line.setAttribute('material', `color: ${lightningColor}; width: ${lightningWidth};`);
-                            lightningContainer.appendChild(line);
-                        }
-                    } catch (error) {
-                        console.error('Error initializing lightning lines:', error);
+                // イコライザーバーの初期化
+               try {
+                    for (let i = 0; i < numBars; i++) {
+                         const bar = document.createElement('a-entity');
+                        bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: 0.1; depth: ${barWidth}`);
+                         bar.setAttribute('material', `color: ${barColor}`);
+                         equalizerContainer.appendChild(bar);
+                         bars.push(bar);
                     }
+                } catch (error) {
+                    console.error('Error initializing equalizer bars:', error);
+                   }
 
                 return true;
             } catch (error) {
@@ -46,16 +48,17 @@
             }
         }
 
+
        // 音声データの解析と視覚化
         AFRAME.registerComponent('audio-visualizer', {
-            tick: function () {
+           tick: function () {
                 if (analyser && !audio.paused) {
                     const freqByteData = new Uint8Array(FFT_SIZE / 2);
                     analyser.getByteFrequencyData(freqByteData);
 
 
                     // スフィアのスケールを変更
-                      let avgScale = 0;
+                  let avgScale = 0;
                     for (let i = 0; i < freqByteData.length; i++) {
                         avgScale += freqByteData[i];
                        }
@@ -63,37 +66,31 @@
                      const scale = 1 + (avgScale / 255) * 0.5;
                     this.el.object3D.scale.set(scale, scale, scale);
 
-                    // 稲妻のアニメーション
-                     try {
-                        const radius = parseFloat(sphere.getAttribute('radius'));
-                        for (let i = 0; i < numLines; i++) {
-                            const line = lightningContainer.children[i];
-                            const angle = (i / numLines) * Math.PI * 2;
-                            const startX = 0;
-                            const startY = 0;
-                            const startZ = 0;
+                      // イコライザーバーの更新
+                   try {
+                        const targetPosition = mindarTarget.object3D.position;
+                        for (let i = 0; i < numBars; i++) {
+                            const bar = bars[i];
+                            const freqSum = freqByteData[i] || 0;
+                             const barHeight = (freqSum / 255) * 1.5;
 
-                            const freqSum = freqByteData[i] || 0; // 周波数データが存在しない場合は0とする
-                            const intensity = Math.min(1, freqSum / 255); // 0から1の範囲に正規化
-
-                            // 稲妻の長さのアニメーション
-                           let endX = Math.cos(angle) * radius * intensity ;
-                           let endY = Math.sin(angle) * radius * intensity ;
-                           let endZ = 0;
+                            const angle = (i / numBars) * Math.PI * 2;
+                            const x = Math.cos(angle) * equalizerRadius;
+                            const z = Math.sin(angle) * equalizerRadius;
 
 
-                            line.setAttribute('geometry', {
-                            start: { x: startX, y: startY, z: startZ },
-                                end: { x: endX, y: endY, z: endZ }
-                            });
+                              bar.setAttribute('position', `${targetPosition.x + x} ${barHeight / 2} ${targetPosition.z + z}`);
+                            bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: ${barHeight}; depth: ${barWidth}`);
+                             bar.setAttribute('rotation', `0 ${-angle * 180 / Math.PI} 0`);
 
                         }
                     } catch (error) {
-                         console.error("Error during lightning animation:", error);
+                       console.error("Error during equalizer animation:", error);
                     }
                 }
             }
         });
+
 
         // 音声再生の制御
         audioControl.addEventListener('click', async () => {
@@ -126,13 +123,13 @@
             scanningOverlay.classList.add('fade-out');
         });
 
-         scene.addEventListener('targetLost', () => {
-             scanningOverlay.classList.remove('fade-out');
+        scene.addEventListener('targetLost', () => {
+            scanningOverlay.classList.remove('fade-out');
         });
-        
-         scene.addEventListener('error', (e) => {
+
+        scene.addEventListener('error', (e) => {
             console.error('A-Frame scene error:', e);
-            });
+        });
 
 
         audio.addEventListener('play', updateAudioButton);
