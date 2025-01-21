@@ -14,7 +14,7 @@
         const numBars = FFT_SIZE / 2; // バーの数
         const barWidth = 0.05;
         const barColor = 'yellow';
-        const equalizerRadius = 0.8; // 円周の半径
+        const equalizerRadius = 1.1; // 円周の半径を拡大
          let isEqualizerVisible = true; // イコライザーの表示状態
 
         let bars = [];
@@ -32,8 +32,7 @@
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
 
-
-               // イコライザーバーの初期化
+                // イコライザーバーの初期化
                try {
                    for (let i = 0; i < numBars; i++) {
                        const bar = document.createElement('a-entity');
@@ -47,7 +46,6 @@
                   }
 
 
-
                 return true;
             } catch (error) {
                 console.error('Audio analyser initialization error:', error);
@@ -58,7 +56,7 @@
 
        // 音声データの解析と視覚化
         AFRAME.registerComponent('audio-visualizer', {
-            tick: function () {
+           tick: function () {
                  if (analyser && !audio.paused) {
                     const freqByteData = new Uint8Array(FFT_SIZE / 2);
                     analyser.getByteFrequencyData(freqByteData);
@@ -74,43 +72,40 @@
                     this.el.object3D.scale.set(scale, scale, scale);
 
                        // イコライザーバーの更新
-                   try {
+                     try {
                         const targetPosition = mindarTarget.object3D.position;
+                        const radius = parseFloat(sphere.getAttribute('radius')) * equalizerRadius; // スフィアの半径を取得
+                        const sphereBottomY = targetPosition.y - parseFloat(sphere.getAttribute('radius')); // スフィアの底辺のY座標を取得
+
+
                         for (let i = 0; i < numBars; i++) {
-                             const bar = bars[i];
+                            const bar = bars[i];
                             const freqSum = freqByteData[i] || 0;
-                            const barHeight = (freqSum / 255) * 1.5; // スケールを調整
-                            const x = 0;
-                            let z = 0;
-                            let y = 0;
+                            const barHeight = (freqSum / 255) * 1.5;
 
 
-                                if (i < numBars / 2) {
-                                // 上半分に配置
-                                  y = equalizerRadius; // 上に配置
-                                 z = (i / (numBars / 2) - 0.5) * equalizerRadius; //左右に分散
-                                } else {
-                                 y = -equalizerRadius; // 下に配置
-                                 z = ((i - numBars / 2) / (numBars / 2) - 0.5) * equalizerRadius; // 左右に分散
-                                }
+                            const angle = (i / (numBars-1)) * Math.PI - (Math.PI/2); // -PI/2 から PI/2の範囲
+                            const x = Math.cos(angle) * radius; //  x座標を計算
+                            const z = Math.sin(angle) * radius; // z座標を計算
 
 
-                            if(isEqualizerVisible){
-                                 bar.setAttribute('position', `${targetPosition.x + x} ${targetPosition.y + y + barHeight/2} ${targetPosition.z + z}`); //Y座標を調整
-                                  bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: ${barHeight}; depth: ${barWidth}`);
-                                  bar.setAttribute('rotation', '0 0 0');
+                            const y = sphereBottomY + barHeight / 2; // Y座標をスフィアの底辺に合わせる
+
+
+                              if(isEqualizerVisible){
+                                  bar.setAttribute('position', `${targetPosition.x + x} ${y} ${targetPosition.z + z}`);
+                                 bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: ${barHeight}; depth: ${barWidth}`);
+                                bar.setAttribute('rotation', `0 ${-(angle + Math.PI/2) * 180 / Math.PI} 0`);// Y軸で90度左に回転
                             }else{
-                                 bar.setAttribute('position', `${targetPosition.x} -10 ${targetPosition.z}`); //非表示の位置
-                               }
+                                 bar.setAttribute('position', `${targetPosition.x} -10 ${targetPosition.z}`);
+                              }
                         }
-                   } catch (error) {
+                    } catch (error) {
                        console.error('Error during equalizer animation:', error);
-                  }
-
+                    }
                 }
            }
         });
-
 
 
         // イコライザーの表示/非表示を切り替える
@@ -119,10 +114,10 @@
               for (let i = 0; i < numBars; i++) {
                    const bar = bars[i];
                     if(!isEqualizerVisible){
-                        bar.setAttribute('position', bar.getAttribute('position').x + ' -10 ' + bar.getAttribute('position').z); // 非表示
+                        bar.setAttribute('position', bar.getAttribute('position').x + ' -10 ' + bar.getAttribute('position').z);
                       }
                 }
-                updateEqualizerButton();
+                 updateEqualizerButton();
          });
 
 
@@ -131,7 +126,6 @@
                icon.className = isEqualizerVisible ? 'fas fa-bars' : 'fas fa-eye-slash';
           }
            updateEqualizerButton();
-
 
 
         // 音声再生の制御
