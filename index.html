@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html>
-<!-- head部分は同じ -->
+<!-- headの部分は同じ -->
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image.prod.js"></script>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- スタイルは変更なし -->
+    <!-- スタイルは同じ -->
     <style>
+        /* 前のスタイルと同じ */
         body { margin: 0; }
         .example-container {
             position: absolute;
@@ -108,6 +109,9 @@
 
     <script>
         let audioContext, analyser, source;
+        let lastBassValue = 0;
+        let lastScale = 0.4;
+        
         const audioControl = document.getElementById('audio-control');
         const audio = document.getElementById('audio');
         const scanningOverlay = document.getElementById('scanning-overlay');
@@ -115,14 +119,13 @@
         const sphere = document.getElementById('visualSphere');
         const model = document.getElementById('base-entity');
 
-        // 音声解析の初期化
         async function initAudioAnalyser() {
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 await audioContext.resume();
                 
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 32; // 周波数分解能を設定
+                analyser.fftSize = 256;  // より詳細な周波数分析のために増加
                 source = audioContext.createMediaElementSource(audio);
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
@@ -134,34 +137,55 @@
             }
         }
 
-        // 音声データの解析と視覚化
+        // 音声データの範囲を正規化する関数
+        function normalizeValue(value, minValue, maxValue) {
+            return (value - minValue) / (maxValue - minValue);
+        }
+
+        // 値の変化を検出する関数
+        function detectBeat(currentValue, threshold = 0.1) {
+            const beat = currentValue - lastBassValue > threshold;
+            lastBassValue = currentValue;
+            return beat;
+        }
+
         AFRAME.registerComponent('audio-visualizer', {
             tick: function() {
                 if (analyser && !audio.paused) {
                     const dataArray = new Uint8Array(analyser.frequencyBinCount);
                     analyser.getByteFrequencyData(dataArray);
                     
-                    // 低周波（ベース）と高周波の平均を計算
-                    const bassAvg = dataArray.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
-                    const trebleAvg = dataArray.slice(4).reduce((a, b) => a + b, 0) / (dataArray.length - 4);
+                    // 低周波数帯域（ベース）の解析
+                    const bassRange = dataArray.slice(1, 5);  // より低い周波数に注目
+                    const bassAvg = bassRange.reduce((a, b) => a + b, 0) / bassRange.length;
+                    const normalizedBass = normalizeValue(bassAvg, 0, 255);
                     
-                    // ベース音により大きな反応を設定
-                    const targetScale = 1 + (bassAvg / 255) * 1.5;  // 係数を1.5に増加
-                    const currentScale = this.el.object3D.scale.x;
-                    const smoothedScale = currentScale + (targetScale - currentScale) * 0.5; // スムージングも調整
+                    // ビートの検出
+                    const isBeat = detectBeat(normalizedBass);
                     
-                    // スフィアのスケールと透明度を更新
-                    this.el.object3D.scale.set(smoothedScale, smoothedScale, smoothedScale);
-                    this.el.setAttribute('opacity', 0.3 + (trebleAvg / 255) * 0.4);
+                    // スケールの計算
+                    let targetScale;
+                    if (isBeat) {
+                        // ビート検出時は大きく反応
+                        targetScale = 0.4 + (normalizedBass * 0.6);
+                    } else {
+                        // 通常時は小さく反応
+                        targetScale = 0.4 + (normalizedBass * 0.3);
+                    }
                     
-                    // モデルのスケールをよりダイナミックに
-                    const modelScale = 0.4 + (bassAvg / 255) * 0.4;  // 係数を0.4に増加
-                    model.setAttribute('scale', `${modelScale} ${modelScale} ${modelScale}`);
+                    // スムーズな遷移
+                    const scaleDiff = targetScale - lastScale;
+                    lastScale = lastScale + scaleDiff * 0.7;
+                    
+                    // モデルのスケール更新
+                    model.setAttribute('scale', `${lastScale} ${lastScale} ${lastScale}`);
+                    
+                    // スフィアの透明度も更新
+                    sphere.setAttribute('opacity', 0.2 + normalizedBass * 0.4);
                 }
             }
         });
 
-        // 音声再生の制御
         audioControl.addEventListener('click', async () => {
             try {
                 if (!audioContext) {
