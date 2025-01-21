@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<!-- head部分は同じ -->
+
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image.prod.js"></script>
@@ -9,13 +9,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- スタイルは変更なし -->
     <style>
-        body { margin: 0; }
+        body {
+            margin: 0;
+        }
+
         .example-container {
             position: absolute;
             width: 100%;
             height: 100%;
             overflow: hidden;
         }
+
         #scanning-overlay {
             position: fixed;
             top: 20px;
@@ -28,6 +32,7 @@
             z-index: 1000;
             transition: opacity 0.3s ease;
         }
+
         #audio-control {
             position: fixed;
             bottom: 30px;
@@ -41,19 +46,22 @@
             border: none;
             z-index: 1000;
             font-size: 40px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
         }
+
         #audio-control:active {
             transform: translateX(-50%) scale(0.95);
         }
+
         .fa-play {
             margin-left: 8px;
         }
+
         .fade-out {
             opacity: 0 !important;
             pointer-events: none;
@@ -64,35 +72,28 @@
 <body>
     <div class="example-container">
         <audio id="audio" preload="auto" loop crossorigin="anonymous">
-            <source src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119" type="audio/mpeg">
+            <source
+                src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119"
+                type="audio/mpeg">
         </audio>
 
-        <a-scene 
+        <a-scene
             mindar-image="imageTargetSrc: https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/targets.mind?v=1737373928367;"
-            embedded 
-            color-space="sRGB" 
-            renderer="colorManagement: true; physicallyCorrectLights: true;" 
-            vr-mode-ui="enabled: false" 
-            device-orientation-permission-ui="enabled: false">
+            embedded color-space="sRGB" renderer="colorManagement: true; physicallyCorrectLights: true;"
+            vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
 
             <a-assets>
-                <a-asset-item id="base-model" src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/base_basic_pbr.glb?v=1737412497932"></a-asset-item>
+                <a-asset-item id="base-model"
+                    src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/base_basic_pbr.glb?v=1737412497932">
+                </a-asset-item>
             </a-assets>
 
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
             <a-entity mindar-image-target="targetIndex: 0">
-                <a-sphere id="visualSphere" 
-                    position="0 0 0" 
-                    radius="0.55"
-                    color="blue"
-                    opacity="0.3"
+                <a-sphere id="visualSphere" position="0 0 0" radius="0.55" color="blue" opacity="0.3"
                     material="metalness: 0.8; roughness: 0.2; transparent: true;">
-                    <a-entity
-                        id="base-entity"
-                        position="0 -0.4 0"
-                        scale="0.4 0.4 0.4"
-                        rotation="0 0 0"
+                    <a-entity id="base-entity" position="0 -0.4 0" scale="0.4 0.4 0.4" rotation="0 0 0"
                         gltf-model="#base-model"
                         animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
                     </a-entity>
@@ -114,19 +115,20 @@
         const scene = document.querySelector('a-scene');
         const sphere = document.getElementById('visualSphere');
         const model = document.getElementById('base-entity');
+        let lastBassAvg = 0;
 
         // 音声解析の初期化
         async function initAudioAnalyser() {
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 await audioContext.resume();
-                
+
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 32; // 周波数分解能を設定
+                analyser.fftSize = 512; // 周波数分解能を設定
                 source = audioContext.createMediaElementSource(audio);
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
-                
+
                 return true;
             } catch (error) {
                 console.error('Audio analyser initialization error:', error);
@@ -136,27 +138,40 @@
 
         // 音声データの解析と視覚化
         AFRAME.registerComponent('audio-visualizer', {
-            tick: function() {
+            tick: function () {
                 if (analyser && !audio.paused) {
                     const dataArray = new Uint8Array(analyser.frequencyBinCount);
                     analyser.getByteFrequencyData(dataArray);
-                    
-                    // 低周波（ベース）と高周波の平均を計算
-                    const bassAvg = dataArray.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
-                    const trebleAvg = dataArray.slice(4).reduce((a, b) => a + b, 0) / (dataArray.length - 4);
-                    
-                    // スケール変更のスムージング
-                    const targetScale = 1 + (bassAvg / 255);  // 0-255の範囲を0-1の範囲に変換
+
+                    // 低音（ベース）と高音の平均を計算
+                    const bassAvg = dataArray.slice(0, 10).reduce((a, b) => a + b, 0) / 10; // 低域を少し広げました
+                    const midAvg = dataArray.slice(10, 60).reduce((a, b) => a + b, 0) / 50; // 中域を追加
+                    const trebleAvg = dataArray.slice(60).reduce((a, b) => a + b, 0) / (dataArray.length - 60); // 高域は狭め
+
+                    // スムージング係数を調整
+                    const smoothingFactor = 0.5;
+
+                    // スケール変更の適用（低域の強さでスケールを決定）
+                    const targetScale = 1 + (bassAvg / 255) * 0.5; // スケールの変化量を調整
                     const currentScale = this.el.object3D.scale.x;
-                    const smoothedScale = currentScale + (targetScale - currentScale) * 0.3;
-                    
-                    // スフィアのスケールと透明度を更新
+                    const smoothedScale = currentScale + (targetScale - currentScale) * smoothingFactor;
                     this.el.object3D.scale.set(smoothedScale, smoothedScale, smoothedScale);
-                    this.el.setAttribute('opacity', 0.3 + (trebleAvg / 255) * 0.2);
-                    
+
+                    // 透明度を中音域と高音域で制御
+                     const targetOpacity = 0.3 + (midAvg / 255) * 0.3 + (trebleAvg / 255) * 0.2;
+                    this.el.setAttribute('opacity', targetOpacity);
+
+
                     // モデルのスケールも更新（より控えめに）
-                    const modelScale = 0.4 + (bassAvg / 255) * 0.1;
+                    const modelScale = 0.4 + (bassAvg / 255) * 0.05; //変化量を調整
                     model.setAttribute('scale', `${modelScale} ${modelScale} ${modelScale}`);
+
+                     // 低音の変化に基づいてモデルのY軸の位置を調整
+                     const bassDiff = bassAvg - lastBassAvg;
+                    const targetY = -0.4 + (bassDiff / 255) * 0.3; // Y軸の変化量を調整
+                    model.setAttribute('position', `0 ${targetY} 0`);
+
+                     lastBassAvg = bassAvg;
                 }
             }
         });
@@ -200,4 +215,5 @@
         audio.addEventListener('pause', updateAudioButton);
     </script>
 </body>
+
 </html>
