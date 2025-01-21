@@ -12,7 +12,7 @@
 
          const FFT_SIZE = 128;
         const numBars = FFT_SIZE / 2; // バーの数
-        const barWidth = 0.05;
+        const barWidth = 0.02; // バーの幅を細くする
         const barColor = 'yellow';
         const equalizerRadius = 1.1; // 円周の半径を拡大
          let isEqualizerVisible = true; // イコライザーの表示状態
@@ -58,9 +58,8 @@
         AFRAME.registerComponent('audio-visualizer', {
            tick: function () {
                  if (analyser && !audio.paused) {
-                    const freqByteData = new Uint8Array(FFT_SIZE / 2);
+                    const freqByteData = new Uint8Array(analyser.frequencyBinCount);
                     analyser.getByteFrequencyData(freqByteData);
-
 
                     // スフィアのスケールを変更
                   let avgScale = 0;
@@ -83,24 +82,21 @@
                             const freqSum = freqByteData[i] || 0;
                             const barHeight = (freqSum / 255) * 1.5;
 
+                            const angle = (i / (numBars-1)) * Math.PI - (Math.PI / 2);
+                             const x = Math.cos(angle - Math.PI/2) * radius;
+                            const z = Math.sin(angle - Math.PI/2) * radius;
 
-                            const angle = (i / (numBars-1)) * Math.PI - (Math.PI/2); // -PI/2 から PI/2の範囲
-                            const x = Math.cos(angle) * radius; //  x座標を計算
-                            const z = Math.sin(angle) * radius; // z座標を計算
+                            const y = sphereBottomY + barHeight / 2;
 
-
-                            const y = sphereBottomY + barHeight / 2; // Y座標をスフィアの底辺に合わせる
-
-
-                              if(isEqualizerVisible){
-                                  bar.setAttribute('position', `${targetPosition.x + x} ${y} ${targetPosition.z + z}`);
-                                 bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: ${barHeight}; depth: ${barWidth}`);
-                                bar.setAttribute('rotation', `0 ${-(angle + Math.PI/2) * 180 / Math.PI} 0`);// Y軸で90度左に回転
+                             if(isEqualizerVisible){
+                                 bar.setAttribute('position', `${targetPosition.x + x} ${y} ${targetPosition.z + z}`);
+                                bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: ${barHeight}; depth: ${barWidth}`);
+                                bar.setAttribute('rotation', `0 ${-angle * 180 / Math.PI -90} 0`);
                             }else{
                                  bar.setAttribute('position', `${targetPosition.x} -10 ${targetPosition.z}`);
-                              }
+                            }
                         }
-                    } catch (error) {
+                     } catch (error) {
                        console.error('Error during equalizer animation:', error);
                     }
                 }
@@ -126,7 +122,6 @@
                icon.className = isEqualizerVisible ? 'fas fa-bars' : 'fas fa-eye-slash';
           }
            updateEqualizerButton();
-
 
         // 音声再生の制御
         audioControl.addEventListener('click', async () => {
