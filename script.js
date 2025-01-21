@@ -1,4 +1,4 @@
-let audioContext, analyser, source;
+        let audioContext, analyser, source;
         const audioControl = document.getElementById('audio-control');
         const audio = document.getElementById('audio');
         const scanningOverlay = document.getElementById('scanning-overlay');
@@ -7,12 +7,16 @@ let audioContext, analyser, source;
         const model = document.getElementById('base-entity');
         const equalizerContainer = document.getElementById('equalizer-container');
          const mindarTarget = document.querySelector('[mindar-image-target]');
+         const toggleEqualizerButton = document.getElementById('toggle-equalizer');
+
 
          const FFT_SIZE = 128;
         const numBars = FFT_SIZE / 2; // バーの数
         const barWidth = 0.05;
         const barColor = 'yellow';
-         const equalizerRadius = 0.8;
+        const equalizerRadius = 0.8; // 円周の半径
+         let isEqualizerVisible = true; // イコライザーの表示状態
+
         let bars = [];
 
         // 音声解析の初期化
@@ -28,18 +32,21 @@ let audioContext, analyser, source;
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
 
-                // イコライザーバーの初期化
+
+               // イコライザーバーの初期化
                try {
-                    for (let i = 0; i < numBars; i++) {
-                         const bar = document.createElement('a-entity');
-                        bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: 0.1; depth: ${barWidth}`);
-                         bar.setAttribute('material', `color: ${barColor}`);
-                         equalizerContainer.appendChild(bar);
-                         bars.push(bar);
-                    }
-                } catch (error) {
-                    console.error('Error initializing equalizer bars:', error);
+                   for (let i = 0; i < numBars; i++) {
+                       const bar = document.createElement('a-entity');
+                       bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: 0.1; depth: ${barWidth}`);
+                        bar.setAttribute('material', `color: ${barColor}`);
+                        equalizerContainer.appendChild(bar);
+                        bars.push(bar);
                    }
+               } catch (error) {
+                   console.error('Error initializing equalizer bars:', error);
+                  }
+
+
 
                 return true;
             } catch (error) {
@@ -51,8 +58,8 @@ let audioContext, analyser, source;
 
        // 音声データの解析と視覚化
         AFRAME.registerComponent('audio-visualizer', {
-           tick: function () {
-                if (analyser && !audio.paused) {
+            tick: function () {
+                 if (analyser && !audio.paused) {
                     const freqByteData = new Uint8Array(FFT_SIZE / 2);
                     analyser.getByteFrequencyData(freqByteData);
 
@@ -66,30 +73,65 @@ let audioContext, analyser, source;
                      const scale = 1 + (avgScale / 255) * 0.5;
                     this.el.object3D.scale.set(scale, scale, scale);
 
-                      // イコライザーバーの更新
+                       // イコライザーバーの更新
                    try {
                         const targetPosition = mindarTarget.object3D.position;
                         for (let i = 0; i < numBars; i++) {
-                            const bar = bars[i];
+                             const bar = bars[i];
                             const freqSum = freqByteData[i] || 0;
-                             const barHeight = (freqSum / 255) * 1.5;
+                            const barHeight = (freqSum / 255) * 1.5; // スケールを調整
+                            const x = 0;
+                            let z = 0;
+                            let y = 0;
 
-                            const angle = (i / numBars) * Math.PI * 2;
-                            const x = Math.cos(angle) * equalizerRadius;
-                            const z = Math.sin(angle) * equalizerRadius;
+
+                                if (i < numBars / 2) {
+                                // 上半分に配置
+                                  y = equalizerRadius; // 上に配置
+                                 z = (i / (numBars / 2) - 0.5) * equalizerRadius; //左右に分散
+                                } else {
+                                 y = -equalizerRadius; // 下に配置
+                                 z = ((i - numBars / 2) / (numBars / 2) - 0.5) * equalizerRadius; // 左右に分散
+                                }
 
 
-                              bar.setAttribute('position', `${targetPosition.x + x} ${barHeight / 2} ${targetPosition.z + z}`);
-                            bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: ${barHeight}; depth: ${barWidth}`);
-                             bar.setAttribute('rotation', `0 ${-angle * 180 / Math.PI} 0`);
-
+                            if(isEqualizerVisible){
+                                 bar.setAttribute('position', `${targetPosition.x + x} ${targetPosition.y + y + barHeight/2} ${targetPosition.z + z}`); //Y座標を調整
+                                  bar.setAttribute('geometry', `primitive: box; width: ${barWidth}; height: ${barHeight}; depth: ${barWidth}`);
+                                  bar.setAttribute('rotation', '0 0 0');
+                            }else{
+                                 bar.setAttribute('position', `${targetPosition.x} -10 ${targetPosition.z}`); //非表示の位置
+                               }
                         }
-                    } catch (error) {
-                       console.error("Error during equalizer animation:", error);
-                    }
+                   } catch (error) {
+                       console.error('Error during equalizer animation:', error);
+                  }
+
                 }
-            }
+           }
         });
+
+
+
+        // イコライザーの表示/非表示を切り替える
+        toggleEqualizerButton.addEventListener('click', () => {
+            isEqualizerVisible = !isEqualizerVisible;
+              for (let i = 0; i < numBars; i++) {
+                   const bar = bars[i];
+                    if(!isEqualizerVisible){
+                        bar.setAttribute('position', bar.getAttribute('position').x + ' -10 ' + bar.getAttribute('position').z); // 非表示
+                      }
+                }
+                updateEqualizerButton();
+         });
+
+
+          function updateEqualizerButton() {
+             const icon = toggleEqualizerButton.querySelector('i');
+               icon.className = isEqualizerVisible ? 'fas fa-bars' : 'fas fa-eye-slash';
+          }
+           updateEqualizerButton();
+
 
 
         // 音声再生の制御
