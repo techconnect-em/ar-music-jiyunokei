@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
-<!-- head部分は変更なし -->
+<!-- head部分は同じ -->
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image.prod.js"></script>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- スタイルは変更なし -->
     <style>
-        /* スタイルは変更なし */
         body { margin: 0; }
         .example-container {
             position: absolute;
@@ -63,7 +63,7 @@
 
 <body>
     <div class="example-container">
-        <audio id="audio" preload="auto" loop>
+        <audio id="audio" preload="auto" loop crossorigin="anonymous">
             <source src="https://cdn.glitch.global/6a533e4a-d788-4e48-a743-a835da332055/mugennouzu.mp3?v=1737269118119" type="audio/mpeg">
         </audio>
 
@@ -82,17 +82,15 @@
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
             <a-entity mindar-image-target="targetIndex: 0">
-                <!-- スフィアを少し大きくして、より透明に -->
                 <a-sphere id="visualSphere" 
                     position="0 0 0" 
                     radius="0.55"
                     color="blue"
                     opacity="0.3"
                     material="metalness: 0.8; roughness: 0.2; transparent: true;">
-                    <!-- モデルのスケールとポジションを調整 -->
                     <a-entity
                         id="base-entity"
-                        position="0 -0.4 0"
+                        position="0 -0.1 0"
                         scale="0.4 0.4 0.4"
                         rotation="0 0 0"
                         gltf-model="#base-model"
@@ -109,22 +107,71 @@
     </button>
 
     <script>
-        // スクリプト部分は変更なし
+        let audioContext, analyser, source;
         const audioControl = document.getElementById('audio-control');
         const audio = document.getElementById('audio');
         const scanningOverlay = document.getElementById('scanning-overlay');
         const scene = document.querySelector('a-scene');
         const sphere = document.getElementById('visualSphere');
+        const model = document.getElementById('base-entity');
 
-        function updateAudioButton() {
-            const icon = audioControl.querySelector('i');
-            icon.className = audio.paused ? 'fas fa-play' : 'fas fa-pause';
+        // 音声解析の初期化
+        async function initAudioAnalyser() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                await audioContext.resume();
+                
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 32; // 周波数分解能を設定
+                source = audioContext.createMediaElementSource(audio);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                
+                return true;
+            } catch (error) {
+                console.error('Audio analyser initialization error:', error);
+                return false;
+            }
         }
 
+        // 音声データの解析と視覚化
+        AFRAME.registerComponent('audio-visualizer', {
+            tick: function() {
+                if (analyser && !audio.paused) {
+                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    // 低周波（ベース）と高周波の平均を計算
+                    const bassAvg = dataArray.slice(0, 4).reduce((a, b) => a + b, 0) / 4;
+                    const trebleAvg = dataArray.slice(4).reduce((a, b) => a + b, 0) / (dataArray.length - 4);
+                    
+                    // ベース音により大きな反応を設定
+                    const targetScale = 1 + (bassAvg / 255) * 1.5;  // 係数を1.5に増加
+                    const currentScale = this.el.object3D.scale.x;
+                    const smoothedScale = currentScale + (targetScale - currentScale) * 0.5; // スムージングも調整
+                    
+                    // スフィアのスケールと透明度を更新
+                    this.el.object3D.scale.set(smoothedScale, smoothedScale, smoothedScale);
+                    this.el.setAttribute('opacity', 0.3 + (trebleAvg / 255) * 0.4);
+                    
+                    // モデルのスケールをよりダイナミックに
+                    const modelScale = 0.4 + (bassAvg / 255) * 0.4;  // 係数を0.4に増加
+                    model.setAttribute('scale', `${modelScale} ${modelScale} ${modelScale}`);
+                }
+            }
+        });
+
+        // 音声再生の制御
         audioControl.addEventListener('click', async () => {
             try {
+                if (!audioContext) {
+                    const initialized = await initAudioAnalyser();
+                    if (!initialized) return;
+                }
+
                 if (audio.paused) {
                     await audio.play();
+                    await audioContext.resume();
                 } else {
                     audio.pause();
                 }
@@ -134,23 +181,12 @@
             }
         });
 
-        AFRAME.registerComponent('complex-animation', {
-            tick: function() {
-                if (!audio.paused) {
-                    const time = Date.now() * 0.001;
-                    
-                    const fastPulse = Math.sin(time * 16) * 0.15;
-                    const slowPulse = Math.sin(time * 4) * 0.1;
-                    const microPulse = Math.sin(time * 32) * 0.05;
-                    
-                    const scale = 1 + fastPulse + slowPulse + microPulse;
-                    
-                    this.el.setAttribute('scale', `${scale} ${scale} ${scale}`);
-                }
-            }
-        });
+        function updateAudioButton() {
+            const icon = audioControl.querySelector('i');
+            icon.className = audio.paused ? 'fas fa-play' : 'fas fa-pause';
+        }
 
-        sphere.setAttribute('complex-animation', '');
+        sphere.setAttribute('audio-visualizer', '');
 
         scene.addEventListener('targetFound', () => {
             scanningOverlay.classList.add('fade-out');
