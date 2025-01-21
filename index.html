@@ -92,8 +92,8 @@
                     <!-- モデルのスケールとポジションを調整 -->
                     <a-entity
                         id="base-entity"
-                        position="0 -0.1 0"
-                        scale="0.15 0.15 0.15"
+                        position="0 -0.4 0"
+                        scale="0.4 0.4 0.4"
                         rotation="0 0 0"
                         gltf-model="#base-model"
                         animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
@@ -139,9 +139,9 @@
                 if (!audio.paused) {
                     const time = Date.now() * 0.001;
                     
-                    const fastPulse = Math.sin(time * 8) * 0.15;
-                    const slowPulse = Math.sin(time * 2) * 0.1;
-                    const microPulse = Math.sin(time * 16) * 0.05;
+                    const fastPulse = Math.sin(time * 16) * 0.15;
+                    const slowPulse = Math.sin(time * 4) * 0.1;
+                    const microPulse = Math.sin(time * 32) * 0.05;
                     
                     const scale = 1 + fastPulse + slowPulse + microPulse;
                     
