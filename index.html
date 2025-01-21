@@ -116,6 +116,13 @@
         const sphere = document.getElementById('visualSphere');
         const model = document.getElementById('base-entity');
         let lastBassAvg = 0;
+        let kickStartTime = 0;
+        const kickThreshold = 150; // キック検出の閾値
+        const kickDuration = 250; // アニメーションの持続時間（ms）
+        const minScale = 0.3; // スケールを縮小する最小値
+         const originalScale = 0.4;
+         let animationProgress = 0; // アニメーションの進行度
+         let lastScale = originalScale;
 
         // 音声解析の初期化
         async function initAudioAnalyser() {
@@ -124,7 +131,7 @@
                 await audioContext.resume();
 
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 512; // 周波数分解能を設定
+                analyser.fftSize = 256; // 周波数分解能を設定
                 source = audioContext.createMediaElementSource(audio);
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
@@ -138,13 +145,13 @@
 
         // 音声データの解析と視覚化
         AFRAME.registerComponent('audio-visualizer', {
-            tick: function () {
+           tick: function (time, deltaTime) {
                 if (analyser && !audio.paused) {
                     const dataArray = new Uint8Array(analyser.frequencyBinCount);
                     analyser.getByteFrequencyData(dataArray);
 
-                    // 低音（ベース）と高音の平均を計算
-                    const bassAvg = dataArray.slice(0, 10).reduce((a, b) => a + b, 0) / 10; // 低域を少し広げました
+                    // 低音（ベース）の平均を計算。さらに狭める
+                    const bassAvg = dataArray.slice(0, 5).reduce((a, b) => a + b, 0) / 5; // 0~5のみ使用
                     const midAvg = dataArray.slice(10, 60).reduce((a, b) => a + b, 0) / 50; // 中域を追加
                     const trebleAvg = dataArray.slice(60).reduce((a, b) => a + b, 0) / (dataArray.length - 60); // 高域は狭め
 
@@ -152,26 +159,37 @@
                     const smoothingFactor = 0.5;
 
                     // スケール変更の適用（低域の強さでスケールを決定）
-                    const targetScale = 1 + (bassAvg / 255) * 0.5; // スケールの変化量を調整
+                    const targetScale = 1 + (bassAvg / 255) * 0.5;
                     const currentScale = this.el.object3D.scale.x;
                     const smoothedScale = currentScale + (targetScale - currentScale) * smoothingFactor;
                     this.el.object3D.scale.set(smoothedScale, smoothedScale, smoothedScale);
 
                     // 透明度を中音域と高音域で制御
-                     const targetOpacity = 0.3 + (midAvg / 255) * 0.3 + (trebleAvg / 255) * 0.2;
+                    const targetOpacity = 0.3 + (midAvg / 255) * 0.3 + (trebleAvg / 255) * 0.2;
                     this.el.setAttribute('opacity', targetOpacity);
 
+                    // キック音の検出とモデルの動き
+                    const now = performance.now();
+                     if (bassAvg > kickThreshold && now - kickStartTime > kickDuration) {
+                        kickStartTime = now;
+                         animationProgress = 0; // 新しいキックでアニメーションをリセット
+                     }
 
-                    // モデルのスケールも更新（より控えめに）
-                    const modelScale = 0.4 + (bassAvg / 255) * 0.05; //変化量を調整
-                    model.setAttribute('scale', `${modelScale} ${modelScale} ${modelScale}`);
+                     const kickProgress = Math.min(1, (now - kickStartTime) / kickDuration);
 
-                     // 低音の変化に基づいてモデルのY軸の位置を調整
-                     const bassDiff = bassAvg - lastBassAvg;
-                    const targetY = -0.4 + (bassDiff / 255) * 0.3; // Y軸の変化量を調整
-                    model.setAttribute('position', `0 ${targetY} 0`);
+                       // スケールの変化を計算
+                       let targetScaleValue = originalScale;
+                       if (kickProgress < 1) {
+                        // アニメーション中はスケールを縮小、拡大
+                         targetScaleValue = originalScale - (originalScale - minScale) * Math.sin(kickProgress * Math.PI);
+                        } 
 
-                     lastBassAvg = bassAvg;
+                        // スムージングを適用
+                       const smoothedScaleValue = lastScale + (targetScaleValue - lastScale) * 0.2;
+                       lastScale = smoothedScaleValue;
+                        model.setAttribute('scale', `${smoothedScaleValue} ${smoothedScaleValue} ${smoothedScaleValue}`);
+
+                    lastBassAvg = bassAvg;
                 }
             }
         });
