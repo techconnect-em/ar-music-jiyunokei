@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-     <style>
+    <style>
         #lyrics-overlay {
             display: none;
             position: fixed;
@@ -19,25 +19,33 @@
             background-color: rgba(0, 0, 0, 0.8);
             color: white;
             z-index: 1001;
-            overflow: auto; /* 歌詞が長い場合にスクロールできるように */
-             padding: 50px; /* 上下のpaddingを追加 */
+            overflow: auto;
+            padding: 50px;
         }
+
         #lyrics-content {
-             white-space: pre-line; /* 改行を保持 */
-                text-align: center; /* 中央揃え */
+            white-space: pre-line;
+            text-align: center;
         }
-        #toggle-lyrics {
+
+        #audio-controls {
             position: fixed;
-            bottom: 150px; /* イコライザーボタンの下に配置 */
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        #audio-control,
+        #toggle-lyrics {
             width: 100px;
             height: 100px;
             border-radius: 50%;
             background: rgba(0, 0, 0, 0.7);
             color: white;
             border: none;
-            z-index: 1000;
             font-size: 40px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             cursor: pointer;
@@ -47,10 +55,11 @@
             transition: all 0.3s ease;
         }
 
+        #audio-control:active,
         #toggle-lyrics:active {
-            transform: translateX(-50%) scale(0.95);
+            transform: scale(0.95);
         }
-     </style>
+    </style>
 </head>
 
 <body>
@@ -81,20 +90,23 @@
                         gltf-model="#base-model"
                         animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
                     </a-entity>
+                    <a-entity id="equalizer-container"></a-entity>
                 </a-sphere>
             </a-entity>
         </a-scene>
     </div>
 
     <div id="scanning-overlay">マーカーをスキャンしてください</div>
-    <button id="audio-control">
-        <i class="fas fa-play"></i>
-    </button>
-     <button id="toggle-lyrics">
-        <i class="fas fa-align-justify"></i>
-    </button>
-   <div id="lyrics-overlay">
-       <div id="lyrics-content">
+    <div id="audio-controls">
+        <button id="audio-control">
+            <i class="fas fa-play"></i>
+        </button>
+        <button id="toggle-lyrics">
+            <i class="fas fa-align-justify"></i>
+        </button>
+    </div>
+    <div id="lyrics-overlay">
+        <div id="lyrics-content">
             「無限の渦」
             [Verse]
             暗い空に叫び声
@@ -131,8 +143,8 @@
             光を求めて揺れる
             現実は幻のよう
             空虚を裂く叫び声
-       </div>
-</div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 
