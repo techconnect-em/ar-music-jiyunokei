@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let bars = [];
     let isLyricsVisible = false;
 
+
     // 音声解析の初期化
     async function initAudioAnalyser() {
         try {
@@ -80,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
         updateEqualizerBars: function (freqByteData) {
-            try {
+           try {
                 const targetPosition = mindarTarget.object3D.position;
                 const radius = parseFloat(sphere.getAttribute('radius')) * this.equalizerRadius;
                 const sphereBottomY = targetPosition.y - parseFloat(sphere.getAttribute('radius'));
@@ -95,27 +96,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     // 使用する周波数データを選択（高周波数帯域をカット）
                     const freqIndex = Math.floor((i / numBars) * (FFT_SIZE / 2));
                     const freqSum = freqByteData[freqIndex] || 0;
-                    let barHeight = (freqSum / 255) * 1.5;
+                   let barHeight = (freqSum / 255) * 1.5;
                     barHeight = Math.max(0.1, barHeight); // 最小値を設定
 
 
                     // スムージング処理
-                    this.barHeights[i] = this.barHeights[i] + (barHeight - this.barHeights[i]) * this.smoothing;
+                  this.barHeights[i] = this.barHeights[i] + (barHeight - this.barHeights[i]) * this.smoothing;
 
-                    let angle = 0;
+                   let angle = 0;
                     if (numBars > 1) {
                         angle = (i / (numBars - 1)) * Math.PI - (Math.PI / 2);
                     }
                     const x = Math.cos(angle - Math.PI / 2) * radius;
                     const z = Math.sin(angle - Math.PI / 2) * radius;
-                    const y = sphereBottomY + this.barHeights[i] / 2;
+                   const y = sphereBottomY + this.barHeights[i] / 2;
 
-                    bar.setAttribute('position', `${targetPosition.x + x} ${y} ${targetPosition.z + z}`);
-                    bar.setAttribute('geometry', `primitive: box; width: ${this.barWidth}; height: ${this.barHeights[i]}; depth: ${this.barWidth}`);
-                    bar.setAttribute('rotation', `0 ${-angle * 180 / Math.PI - 90} 0`);
+                   bar.setAttribute('position', `${targetPosition.x + x} ${y} ${targetPosition.z + z}`);
+                  bar.setAttribute('geometry', `primitive: box; width: ${this.barWidth}; height: ${this.barHeights[i]}; depth: ${this.barWidth}`);
+                   bar.setAttribute('rotation', `0 ${-angle * 180 / Math.PI - 90} 0`);
                 }
 
-            } catch (error) {
+           } catch (error) {
                 console.error('Error during equalizer animation:', error);
             }
         }

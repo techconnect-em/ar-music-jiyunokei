@@ -20,22 +20,20 @@
             color: white;
             z-index: 999;
             overflow: auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+             padding: 50px;
+
 
         }
 
         #lyrics-content {
-            text-align: center;
+             text-align: center;
             padding: 20px;
-             display: flex;
+              display: flex;
              flex-direction: column;
-            align-items: center;
-             justify-content: center;
-             word-wrap: break-word; /* テキストを折り返す */
-
-
+          align-items: center;
+            justify-content: center;
+             word-wrap: break-word;
+              font-family: '游ゴシック', YuGothic, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
         }
 
         #audio-controls {
@@ -43,7 +41,7 @@
             bottom: 30px;
             right: 20px;
             display: flex;
-            gap: 20px;
+             gap: 20px;
             z-index: 1000;
 
 
@@ -77,6 +75,9 @@
             font-size: 32px;
             transform: none;
         }
+         body{
+           height: 100vh;
+         }
     </style>
 </head>
 
@@ -126,41 +127,40 @@
     <div id="lyrics-overlay">
         <div id="lyrics-content">
             <span style="font-size: 1.2em;">「無限の渦」</span>
-            [Verse]
-            暗い空に叫び声
-            奇跡求め飛び出す
-            盲目の未来探して
-            夜明けを待ち続ける
+            <p>暗い空に叫び声<br>
+            奇跡求め飛び出す<br>
+            盲目の未来探して<br>
+            夜明けを待ち続ける</p>
 
-            [Verse 2]
-            冷たい風に包まれ
-            終わりのない孤独さ
-            壊れかけた夢を見て
-            逃げ場所を探してる
+            <p>[Verse 2] <br>
+            冷たい風に包まれ<br>
+            終わりのない孤独さ<br>
+            壊れかけた夢を見て<br>
+            逃げ場所を探してる </p>
 
-            [Chorus]
-            心の奥 深く潜り
-            光を求めて揺れる
-            現実は幻のよう
-            空虚を裂く叫び声
+            <p>[Chorus]<br>
+            心の奥 深く潜り<br>
+            光を求めて揺れる<br>
+            現実は幻のよう<br>
+            空虚を裂く叫び声 </p>
 
-            [Verse 3]
-            電子の波に溶けて
-            哀愁のメロディー
-            繋がれた記憶たちが
-            幻想の中踊りだす
+            <p>[Verse 3]<br>
+            電子の波に溶けて<br>
+            哀愁のメロディー<br>
+            繋がれた記憶たちが<br>
+            幻想の中踊りだす </p>
 
-            [Bridge]
-            遥か彼方遠すぎて
-            触れられない救いの手
-            心の氷解けるまで
-            絶望を抱きしめて
+            <p> [Bridge] <br>
+            遥か彼方遠すぎて<br>
+            触れられない救いの手<br>
+            心の氷解けるまで<br>
+            絶望を抱きしめて </p>
 
-            [Chorus]
-            心の奥 深く潜り
-            光を求めて揺れる
-            現実は幻のよう
-            空虚を裂く叫び声
+            <p>[Chorus]<br>
+            心の奥 深く潜り<br>
+            光を求めて揺れる<br>
+            現実は幻のよう<br>
+            空虚を裂く叫び声 </p>
         </div>
     </div>
     <script src="script.js"></script>
