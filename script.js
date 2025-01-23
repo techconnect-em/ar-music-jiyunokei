@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             source.connect(analyser);
             analyser.connect(audioContext.destination);
 
-            // イコライザーバーの初期化
+             // イコライザーバーの初期化
             try {
                 for (let i = 0; i < numBars; i++) {
                     const bar = document.createElement('a-entity');
@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error initializing equalizer bars:', error);
             }
 
+
             return true;
         } catch (error) {
             console.error('Audio analyser initialization error:', error);
@@ -54,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 音声データの解析と視覚化
     AFRAME.registerComponent('audio-visualizer', {
-        init: function () {
+         init: function () {
             this.barWidth = 0.02;
             this.barColor = 'yellow';
             this.equalizerRadius = 1.1;
@@ -80,24 +81,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.updateEqualizerBars(freqByteData);
             }
         },
-        updateEqualizerBars: function (freqByteData) {
+       updateEqualizerBars: function (freqByteData) {
            try {
                 const targetPosition = mindarTarget.object3D.position;
                 const radius = parseFloat(sphere.getAttribute('radius')) * this.equalizerRadius;
                 const sphereBottomY = targetPosition.y - parseFloat(sphere.getAttribute('radius'));
 
                 for (let i = 0; i < numBars; i++) {
-                    const bar = bars[i];
+                  const bar = bars[i];
 
-                    if (!bar) {
-                        console.error('bar is null or undefined:', i, bars);
-                        continue;
-                    }
-                    // 使用する周波数データを選択（高周波数帯域をカット）
+                 if (!bar) {
+                     console.error('bar is null or undefined:', i, bars);
+                      continue;
+                 }
+                // 使用する周波数データを選択（高周波数帯域をカット）
                     const freqIndex = Math.floor((i / numBars) * (FFT_SIZE / 2));
                     const freqSum = freqByteData[freqIndex] || 0;
-                   let barHeight = (freqSum / 255) * 1.5;
-                    barHeight = Math.max(0.1, barHeight); // 最小値を設定
+                  let barHeight = (freqSum / 255) * 1.5;
+                   barHeight = Math.max(0.1, barHeight); // 最小値を設定
 
 
                     // スムージング処理
@@ -105,20 +106,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                    let angle = 0;
                     if (numBars > 1) {
-                        angle = (i / (numBars - 1)) * Math.PI - (Math.PI / 2);
-                    }
+                       angle = (i / (numBars - 1)) * Math.PI - (Math.PI / 2);
+                   }
                     const x = Math.cos(angle - Math.PI / 2) * radius;
                     const z = Math.sin(angle - Math.PI / 2) * radius;
-                   const y = sphereBottomY + this.barHeights[i] / 2;
+                    const y = sphereBottomY + this.barHeights[i] / 2;
 
-                   bar.setAttribute('position', `${targetPosition.x + x} ${y} ${targetPosition.z + z}`);
-                  bar.setAttribute('geometry', `primitive: box; width: ${this.barWidth}; height: ${this.barHeights[i]}; depth: ${this.barWidth}`);
+                    bar.setAttribute('position', `${targetPosition.x + x} ${y} ${targetPosition.z + z}`);
+                    bar.setAttribute('geometry', `primitive: box; width: ${this.barWidth}; height: ${this.barHeights[i]}; depth: ${this.barWidth}`);
                    bar.setAttribute('rotation', `0 ${-angle * 180 / Math.PI - 90} 0`);
                 }
 
-           } catch (error) {
-                console.error('Error during equalizer animation:', error);
-            }
+          } catch (error) {
+              console.error('Error during equalizer animation:', error);
+           }
         }
 
     });
@@ -165,10 +166,16 @@ document.addEventListener('DOMContentLoaded', () => {
     sphere.setAttribute('audio-visualizer', '');
 
     scene.addEventListener('targetFound', () => {
+       lyricsOverlay.style.display = 'none'; // マーカー認識時、歌詞非表示
         scanningOverlay.classList.add('fade-out');
     });
 
     scene.addEventListener('targetLost', () => {
+       if(isLyricsVisible){
+         lyricsOverlay.style.display = 'block'; // マーカー認識消失時、歌詞表示
+       } else {
+          lyricsOverlay.style.display = 'none'; // マーカー認識消失時、歌詞非表示
+       }
         scanningOverlay.classList.remove('fade-out');
     });
 
