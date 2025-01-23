@@ -165,3 +165,68 @@
 
         audio.addEventListener('play', updateAudioButton);
         audio.addEventListener('pause', updateAudioButton);
+// スクリプトに追加
+AFRAME.registerComponent('particle-system', {
+  schema: {
+    preset: {default: 'default'},
+    particleCount: {default: 500},
+    color: {default: '#FFFFFF'},
+    size: {default: 0.05},
+    maxAge: {default: 5},
+    velocityValue: {type: 'vec3', default: {x: 0.1, y: 0.1, z: 0.1}},
+    velocitySpread: {type: 'vec3', default: {x: 0.2, y: 0.2, z: 0.2}},
+    accelerationValue: {type: 'vec3', default: {x: 0, y: 0, z: 0}},
+    accelerationSpread: {type: 'vec3', default: {x: 0.1, y: 0.1, z: 0.1}}
+  },
+
+  init: function() {
+    this.particles = [];
+    for (let i = 0; i < this.data.particleCount; i++) {
+      this.particles.push(this.createParticle());
+    }
+  },
+
+  createParticle: function() {
+    const particle = document.createElement('a-sphere');
+    particle.setAttribute('radius', this.data.size);
+    particle.setAttribute('color', this.data.color);
+    particle.setAttribute('opacity', Math.random() * 0.5 + 0.5);
+    
+    // ランダムな初期位置
+    const pos = {
+      x: (Math.random() - 0.5) * 2,
+      y: (Math.random() - 0.5) * 2,
+      z: (Math.random() - 0.5) * 2
+    };
+    particle.setAttribute('position', pos);
+    
+    // 速度と加速度を設定
+    particle.velocity = {
+      x: this.data.velocityValue.x + (Math.random() - 0.5) * this.data.velocitySpread.x,
+      y: this.data.velocityValue.y + (Math.random() - 0.5) * this.data.velocitySpread.y,
+      z: this.data.velocityValue.z + (Math.random() - 0.5) * this.data.velocitySpread.z
+    };
+    
+    this.el.appendChild(particle);
+    return particle;
+  },
+
+  tick: function(time, deltaTime) {
+    this.particles.forEach(particle => {
+      const pos = particle.getAttribute('position');
+      const vel = particle.velocity;
+      
+      // 位置の更新
+      pos.x += vel.x * (deltaTime/1000);
+      pos.y += vel.y * (deltaTime/1000);
+      pos.z += vel.z * (deltaTime/1000);
+      
+      // 範囲外に出たら反対側に戻す
+      if (Math.abs(pos.x) > 2) pos.x *= -0.9;
+      if (Math.abs(pos.y) > 2) pos.y *= -0.9;
+      if (Math.abs(pos.z) > 2) pos.z *= -0.9;
+      
+      particle.setAttribute('position', pos);
+    });
+  }
+});
