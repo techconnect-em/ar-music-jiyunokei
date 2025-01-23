@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const FFT_SIZE = 256;
     const numBars = FFT_SIZE / 4;
     let bars = [];
-    let isEqualizerVisible = true;
     let isLyricsVisible = false;
 
 
@@ -76,12 +75,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const scale = 1 + (avgScale / 255) * 0.5;
                 this.el.object3D.scale.set(scale, scale, scale);
 
-                 // イコライザーバーの更新
+                  // イコライザーバーの更新
                 this.updateEqualizerBars(freqByteData);
             }
         },
-
-        updateEqualizerBars: function (freqByteData) {
+         updateEqualizerBars: function (freqByteData) {
             try {
                 const targetPosition = mindarTarget.object3D.position;
                 const radius = parseFloat(sphere.getAttribute('radius')) * this.equalizerRadius;
@@ -89,13 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 for (let i = 0; i < numBars; i++) {
                     const bar = bars[i];
-                    const freqSum = freqByteData[i] || 0;
+                  // 使用する周波数データを選択（高周波数帯域をカット）
+                    const freqIndex = Math.floor((i / numBars) * (FFT_SIZE / 2));
+                    const freqSum = freqByteData[freqIndex] || 0;
                     let barHeight = (freqSum / 255) * 1.5;
                     barHeight = Math.max(0.1, barHeight); // 最小値を設定
 
-                    // スムージング処理
-                    this.barHeights[i] = this.barHeights[i] + (barHeight - this.barHeights[i]) * this.smoothing;
 
+                    // スムージング処理
+                   this.barHeights[i] = this.barHeights[i] + (barHeight - this.barHeights[i]) * this.smoothing;
 
                     let angle = 0;
                     if (numBars > 1) {
@@ -103,13 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
                    }
                     const x = Math.cos(angle - Math.PI / 2) * radius;
                    const z = Math.sin(angle - Math.PI / 2) * radius;
-                    const y = sphereBottomY + this.barHeights[i] / 2;
+                   const y = sphereBottomY + this.barHeights[i] / 2;
 
-
-                    bar.setAttribute('position', `${targetPosition.x + x} ${y} ${targetPosition.z + z}`);
+                   bar.setAttribute('position', `${targetPosition.x + x} ${y} ${targetPosition.z + z}`);
                     bar.setAttribute('geometry', `primitive: box; width: ${this.barWidth}; height: ${this.barHeights[i]}; depth: ${this.barWidth}`);
-                    bar.setAttribute('rotation', `0 ${-angle * 180 / Math.PI - 90} 0`);
-
+                   bar.setAttribute('rotation', `0 ${-angle * 180 / Math.PI - 90} 0`);
                 }
             } catch (error) {
                 console.error('Error during equalizer animation:', error);
@@ -117,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
     });
+
 
     // 歌詞の表示/非表示を切り替える
     toggleLyricsButton.addEventListener('click', () => {

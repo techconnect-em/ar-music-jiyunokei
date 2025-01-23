@@ -18,14 +18,19 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.8);
             color: white;
-            z-index: 1001;
+            z-index: 999;
             overflow: auto;
             padding: 50px;
+           display: flex;
+           align-items: center;
+            justify-content: center;
+
         }
 
         #lyrics-content {
             white-space: pre-line;
-            text-align: center;
+                text-align: center;
+                padding: 20px;
         }
 
         #audio-controls {
@@ -34,8 +39,11 @@
             left: 50%;
             transform: translateX(-50%);
             display: flex;
+             justify-content:center;
             gap: 20px;
             z-index: 1000;
+            padding: 0 20px; /* ボタン両端に余白 */
+
         }
 
         #audio-control,
@@ -58,6 +66,13 @@
         #audio-control:active,
         #toggle-lyrics:active {
             transform: scale(0.95);
+        }
+
+        #toggle-lyrics {
+            transform: translateX(50px);
+            width: 80px;
+            height: 80px;
+            font-size: 32px;
         }
     </style>
 </head>
@@ -107,38 +122,33 @@
     </div>
     <div id="lyrics-overlay">
         <div id="lyrics-content">
-            「無限の渦」
-            [Verse]
+            <span style="font-size: 1.2em;">無限の渦</span>
+
             暗い空に叫び声
             奇跡求め飛び出す
             盲目の未来探して
             夜明けを待ち続ける
 
-            [Verse 2]
             冷たい風に包まれ
             終わりのない孤独さ
             壊れかけた夢を見て
             逃げ場所を探してる
 
-            [Chorus]
             心の奥 深く潜り
             光を求めて揺れる
             現実は幻のよう
             空虚を裂く叫び声
 
-            [Verse 3]
             電子の波に溶けて
             哀愁のメロディー
             繋がれた記憶たちが
             幻想の中踊りだす
 
-            [Bridge]
             遥か彼方遠すぎて
             触れられない救いの手
             心の氷解けるまで
             絶望を抱きしめて
 
-            [Chorus]
             心の奥 深く潜り
             光を求めて揺れる
             現実は幻のよう
