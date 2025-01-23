@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const mindarTarget = document.querySelector('[mindar-image-target]');
     const toggleEqualizerButton = document.getElementById('toggle-equalizer');
 
-    const FFT_SIZE = 128;
-    const numBars = FFT_SIZE / 2;
+    const FFT_SIZE = 256;
+    const numBars = FFT_SIZE / 4;
     let bars = [];
     let isEqualizerVisible = true;
 
