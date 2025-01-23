@@ -8,6 +8,49 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.3/dist/mindar-image-aframe.prod.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+     <style>
+        #lyrics-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            z-index: 1001;
+            overflow: auto; /* 歌詞が長い場合にスクロールできるように */
+             padding: 50px; /* 上下のpaddingを追加 */
+        }
+        #lyrics-content {
+             white-space: pre-line; /* 改行を保持 */
+                text-align: center; /* 中央揃え */
+        }
+        #toggle-lyrics {
+            position: fixed;
+            bottom: 150px; /* イコライザーボタンの下に配置 */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            z-index: 1000;
+            font-size: 40px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        #toggle-lyrics:active {
+            transform: translateX(-50%) scale(0.95);
+        }
+     </style>
 </head>
 
 <body>
@@ -38,7 +81,6 @@
                         gltf-model="#base-model"
                         animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear">
                     </a-entity>
-                    <a-entity id="equalizer-container"></a-entity>
                 </a-sphere>
             </a-entity>
         </a-scene>
@@ -48,9 +90,49 @@
     <button id="audio-control">
         <i class="fas fa-play"></i>
     </button>
-    <button id="toggle-equalizer">
-        <i class="fas fa-bars"></i>
+     <button id="toggle-lyrics">
+        <i class="fas fa-align-justify"></i>
     </button>
+   <div id="lyrics-overlay">
+       <div id="lyrics-content">
+            「無限の渦」
+            [Verse]
+            暗い空に叫び声
+            奇跡求め飛び出す
+            盲目の未来探して
+            夜明けを待ち続ける
+
+            [Verse 2]
+            冷たい風に包まれ
+            終わりのない孤独さ
+            壊れかけた夢を見て
+            逃げ場所を探してる
+
+            [Chorus]
+            心の奥 深く潜り
+            光を求めて揺れる
+            現実は幻のよう
+            空虚を裂く叫び声
+
+            [Verse 3]
+            電子の波に溶けて
+            哀愁のメロディー
+            繋がれた記憶たちが
+            幻想の中踊りだす
+
+            [Bridge]
+            遥か彼方遠すぎて
+            触れられない救いの手
+            心の氷解けるまで
+            絶望を抱きしめて
+
+            [Chorus]
+            心の奥 深く潜り
+            光を求めて揺れる
+            現実は幻のよう
+            空虚を裂く叫び声
+       </div>
+</div>
     <script src="script.js"></script>
 </body>
 
