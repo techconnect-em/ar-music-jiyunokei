@@ -31,7 +31,6 @@ body {
   pointer-events: none;
 }
 
-
 #toggle-equalizer:active {
   transform: scale(0.95);
 }
@@ -45,7 +44,7 @@ body {
   color: white;
   z-index: 999;
   overflow: auto;
-  display: none;  /* 初期状態は非表示 */
+  display: none; /* 初期状態は非表示 */
   align-items: center;
   justify-content: center;
 }
@@ -93,7 +92,7 @@ body {
 #audio-control:active,
 #toggle-lyrics:active,
 #social-links:active {
-    transform: scale(0.95);
+  transform: scale(0.95);
 }
 
 #toggle-lyrics,
@@ -102,4 +101,5 @@ body {
   height: 80px;
   font-size: 32px;
   transform: none;
+  
 }
