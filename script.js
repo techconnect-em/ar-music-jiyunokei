@@ -13,10 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const websiteButton = document.getElementById('website-button');
 
     //音楽再生バー
-   const seekBar = document.getElementById('seek-bar');
+    const seekBar = document.getElementById('seek-bar');
     const currentTimeDisplay = document.getElementById('current-time');
     const durationDisplay = document.getElementById('duration');
-
 
     const FFT_SIZE = 256;
     const numBars = 32; // 固定のバーの数に変更
@@ -37,31 +36,63 @@ document.addEventListener('DOMContentLoaded', () => {
         lyricsOverlay.style.display = (lyricsOverlay.style.display === 'none') ? 'flex' : 'none';
     });
 
-  // 再生時間を整形する関数
+     // 再生時間を整形する関数
     function formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
+       const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+         // 負の時間を考慮
+         const absMins = Math.abs(mins);
+        const absSecs = Math.abs(secs);
+
+         const formattedMins = String(absMins).padStart(0, '0');
+        const formattedSecs = String(absSecs).padStart(2, '0');
+        return `${mins < 0 ? '-' : ''}${formattedMins}:${formattedSecs}`;
     }
 
     // イベントリスナー: メタデータがロードされたとき
     audio.addEventListener('loadedmetadata', () => {
+       if (isNaN(audio.duration)) {
+           console.warn("audio.duration is NaN. Trying again...");
+            return;
+        }
         const durationInSeconds = audio.duration;
-        durationDisplay.textContent = formatTime(durationInSeconds);
         seekBar.max = durationInSeconds;
+
+        // 初期 durationDisplay を設定
+        const timeLeft = durationInSeconds - audio.currentTime;
+        durationDisplay.textContent = formatTime(timeLeft);
     });
 
     // イベントリスナー: 再生時間が更新されたとき
     audio.addEventListener('timeupdate', () => {
         currentTimeDisplay.textContent = formatTime(audio.currentTime);
         seekBar.value = audio.currentTime;
+        // 経過時間から残りの時間を計算して表示
+         const timeLeft = audio.duration - audio.currentTime;
+        durationDisplay.textContent = formatTime(timeLeft);
     });
+
 
     // イベントリスナー: seek barが変更されたとき
     seekBar.addEventListener('input', () => {
         audio.currentTime = seekBar.value;
         currentTimeDisplay.textContent = formatTime(audio.currentTime);
     });
+
+    // イベントリスナー: 楽曲の再生が終わったとき
+    audio.addEventListener('ended', () => {
+    audioControl.querySelector('i').className = 'fas fa-play';
+    });
+  
+      // audio.duration が更新されない場合に対応
+      setInterval(() => {
+          if (!isNaN(audio.duration) && audio.duration > 0) {
+             const durationInSeconds = audio.duration;
+              durationDisplay.textContent = formatTime(durationInSeconds);
+               seekBar.max = durationInSeconds;
+          }
+      }, 1000);
 
     // 音声解析の初期化
     async function initAudioAnalyser() {
@@ -188,13 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     audio.addEventListener('play', updateAudioButton);
     audio.addEventListener('pause', updateAudioButton);
-  
-    // DOMContentLoaded以降に実行されるように、initAudioAnalyserの呼び出しをここに移動
-    init();
 
-    async function init() {
-       await initAudioAnalyser();
-    }
 
     //音楽再生、歌詞表示、Webサイト移動などのイベントリスナーを定義
     websiteButton.addEventListener('click', () => {

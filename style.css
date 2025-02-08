@@ -66,7 +66,8 @@ body {
 /* ボタンを横並びにするコンテナ */
 #button-container {
     position: fixed;
-    bottom: 30px;
+    bottom: 70px;
+    /* より下に移動 */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -124,7 +125,34 @@ body {
 /* 音楽再生バー */
 #seek-bar {
     width: 80%;
+    /* 長さをさらに長く変更 */
     margin: 10px auto;
+    -webkit-appearance: none;
+    /* デフォルトスタイルを削除 */
+    height: 8px;
+    /* 高さ */
+    background: #888;
+    /* 色 */
+    outline: none;
+    /* フォーカス時の枠線を削除 */
+    border-radius: 4px;
+    /* 角丸 */
+}
+
+/* スライダーつまみ */
+#seek-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    /* デフォルトスタイルを削除 */
+    width: 16px;
+    /* 幅 */
+    height: 16px;
+    /* 高さ */
+    background: #eee;
+    /* 色 */
+    cursor: pointer;
+    /* カーソル形状 */
+    border-radius: 50%;
+    /* 円形 */
 }
 
 /* 再生時間 */
@@ -136,8 +164,16 @@ body {
 }
 
 .time-container {
+    position: fixed;
+    /* 絶対位置指定 */
+    bottom: 30px;
+    /* 下からの距離 */
+    left: 50%;
+    /* 横方向中央 */
+    transform: translateX(-50%);
+    /* 横方向中央寄せ */
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 10px;
+    z-index: 1000;
 }
