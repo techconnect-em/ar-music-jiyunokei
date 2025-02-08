@@ -120,3 +120,24 @@ body {
 #toggle-lyrics:active {
     transform: scale(0.95);
 }
+
+/* 音楽再生バー */
+#seek-bar {
+    width: 80%;
+    margin: 10px auto;
+}
+
+/* 再生時間 */
+#current-time,
+#duration {
+    color: white;
+    font-size: 14px;
+    margin: 0 10px;
+}
+
+.time-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+}

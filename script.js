@@ -10,15 +10,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const mindarTarget = document.querySelector('[mindar-image-target]');
     const lyricsOverlay = document.getElementById('lyrics-overlay');
     const toggleLyricsButton = document.getElementById('toggle-lyrics');
-    const websiteButton = document.getElementById('website-button'); // Webサイトへのリンクボタン
+    const websiteButton = document.getElementById('website-button');
+
+    //音楽再生バー
+   const seekBar = document.getElementById('seek-bar');
+    const currentTimeDisplay = document.getElementById('current-time');
+    const durationDisplay = document.getElementById('duration');
+
 
     const FFT_SIZE = 256;
-    const numBars = FFT_SIZE / 4;
+    const numBars = 32; // 固定のバーの数に変更
     let bars = [];
     let isLyricsVisible = false;
 
     // ページの読み込み時に歌詞を非表示にする
     lyricsOverlay.style.display = 'none';
+
+    // リンクボタンのイベントリスナー
+    websiteButton.addEventListener('click', () => {
+        window.open('https://www.instagram.com/techconnect.em/', '_blank');
+    });
+
+    //歌詞表示のイベントリスナー
+    toggleLyricsButton.addEventListener('click', () => {
+        const lyricsOverlay = document.getElementById('lyrics-overlay');
+        lyricsOverlay.style.display = (lyricsOverlay.style.display === 'none') ? 'flex' : 'none';
+    });
+
+  // 再生時間を整形する関数
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    // イベントリスナー: メタデータがロードされたとき
+    audio.addEventListener('loadedmetadata', () => {
+        const durationInSeconds = audio.duration;
+        durationDisplay.textContent = formatTime(durationInSeconds);
+        seekBar.max = durationInSeconds;
+    });
+
+    // イベントリスナー: 再生時間が更新されたとき
+    audio.addEventListener('timeupdate', () => {
+        currentTimeDisplay.textContent = formatTime(audio.currentTime);
+        seekBar.value = audio.currentTime;
+    });
+
+    // イベントリスナー: seek barが変更されたとき
+    seekBar.addEventListener('input', () => {
+        audio.currentTime = seekBar.value;
+        currentTimeDisplay.textContent = formatTime(audio.currentTime);
+    });
 
     // 音声解析の初期化
     async function initAudioAnalyser() {
@@ -53,49 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Audio analyser initialization error:', error);
             return false;
         }
-    }
-
-    // Webサイトへのリンクボタンのイベントリスナー
-    websiteButton.addEventListener('click', () => {
-        window.open('https://www.instagram.com/techconnect.em/', '_blank');
-    });
-
-    // 歌詞の表示/非表示を切り替える
-    toggleLyricsButton.addEventListener('click', () => {
-        isLyricsVisible = !isLyricsVisible;
-        lyricsOverlay.style.display = isLyricsVisible ? 'block' : 'none';
-        updateLyricsButton();
-    });
-
-    function updateLyricsButton() {
-        const icon = toggleLyricsButton.querySelector('i');
-        icon.className = isLyricsVisible ? 'fas fa-times' : 'fas fa-align-justify';
-    }
-    updateLyricsButton();
-
-    // 音声再生の制御
-    audioControl.addEventListener('click', async () => {
-        try {
-            if (!audioContext) {
-                const initialized = await initAudioAnalyser();
-                if (!initialized) return;
-            }
-
-            if (audio.paused) {
-                await audio.play();
-                await audioContext.resume();
-            } else {
-                audio.pause();
-            }
-            updateAudioButton();
-        } catch (error) {
-            console.error('Audio control error:', error);
-        }
-    });
-
-    function updateAudioButton() {
-        const icon = audioControl.querySelector('i');
-        icon.className = audio.paused ? 'fas fa-play' : 'fas fa-pause';
     }
 
     // 音声データの解析と視覚化
@@ -188,4 +188,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     audio.addEventListener('play', updateAudioButton);
     audio.addEventListener('pause', updateAudioButton);
+  
+    // DOMContentLoaded以降に実行されるように、initAudioAnalyserの呼び出しをここに移動
+    init();
+
+    async function init() {
+       await initAudioAnalyser();
+    }
+
+    //音楽再生、歌詞表示、Webサイト移動などのイベントリスナーを定義
+    websiteButton.addEventListener('click', () => {
+        window.open('https://www.instagram.com/techconnect.em/', '_blank');
+    });
+
+    toggleLyricsButton.addEventListener('click', () => {
+        isLyricsVisible = !isLyricsVisible;
+        lyricsOverlay.style.display = isLyricsVisible ? 'flex' : 'none';
+        updateLyricsButton();
+    });
+
+     function updateLyricsButton() {
+        const icon = toggleLyricsButton.querySelector('i');
+        icon.className = isLyricsVisible ? 'fas fa-times' : 'fas fa-align-justify';
+    }
+
+   audioControl.addEventListener('click', async () => {
+        try {
+            if (audio.paused) {
+                await audio.play();
+                await audioContext.resume();
+            } else {
+                audio.pause();
+            }
+            updateAudioButton();
+        } catch (error) {
+            console.error('Audio control error:', error);
+        }
+    });
+
+    function updateAudioButton() {
+        const icon = audioControl.querySelector('i');
+        icon.className = audio.paused ? 'fas fa-play' : 'fas fa-pause';
+    }
 });

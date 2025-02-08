@@ -45,7 +45,8 @@
     </div>
 
     <div id="scanning-overlay">CDのジャケットをスキャンしてください</div>
-    <div id="button-container">
+
+  <div id="button-container">
         <button class="social-links" id="website-button">
             <i class="fas fa-globe"></i>
         </button>
@@ -55,7 +56,13 @@
         <button id="toggle-lyrics">
             <i class="fas fa-align-justify"></i>
         </button>
-    </div>
+   </div>
+
+    <div class="time-container">
+        <span id="current-time">0:00</span>
+        <input type="range" id="seek-bar" value="0" min="0" max="100" step="0.01">
+         <span id="duration">0:00</span>
+      </div>
 
     <div id="lyrics-overlay">
         <div id="lyrics-content">
