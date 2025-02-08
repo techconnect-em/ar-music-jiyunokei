@@ -124,7 +124,7 @@ body {
 
 /* 音楽再生バー */
 #seek-bar {
-    width: 80%;
+    width: 100%;
     /* 長さをさらに長く変更 */
     margin: 10px auto;
     -webkit-appearance: none;

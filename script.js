@@ -50,29 +50,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${mins < 0 ? '-' : ''}${formattedMins}:${formattedSecs}`;
     }
 
-    // イベントリスナー: メタデータがロードされたとき
+   // イベントリスナー: メタデータがロードされたとき
     audio.addEventListener('loadedmetadata', () => {
-       if (isNaN(audio.duration)) {
-           console.warn("audio.duration is NaN. Trying again...");
+        if (isNaN(audio.duration)) {
+            console.warn("audio.duration is NaN. Trying again...");
             return;
         }
         const durationInSeconds = audio.duration;
         seekBar.max = durationInSeconds;
-
-        // 初期 durationDisplay を設定
-        const timeLeft = durationInSeconds - audio.currentTime;
-        durationDisplay.textContent = formatTime(timeLeft);
+        durationDisplay.textContent = formatTime(durationInSeconds); // durationを初期化
     });
 
     // イベントリスナー: 再生時間が更新されたとき
     audio.addEventListener('timeupdate', () => {
         currentTimeDisplay.textContent = formatTime(audio.currentTime);
         seekBar.value = audio.currentTime;
-        // 経過時間から残りの時間を計算して表示
-         const timeLeft = audio.duration - audio.currentTime;
+          // 経過時間から残りの時間を計算して表示
+        const timeLeft = audio.duration - audio.currentTime;
         durationDisplay.textContent = formatTime(timeLeft);
     });
-
 
     // イベントリスナー: seek barが変更されたとき
     seekBar.addEventListener('input', () => {
@@ -82,17 +78,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // イベントリスナー: 楽曲の再生が終わったとき
     audio.addEventListener('ended', () => {
-    audioControl.querySelector('i').className = 'fas fa-play';
+        audioControl.querySelector('i').className = 'fas fa-play';
     });
-  
-      // audio.duration が更新されない場合に対応
-      setInterval(() => {
-          if (!isNaN(audio.duration) && audio.duration > 0) {
-             const durationInSeconds = audio.duration;
-              durationDisplay.textContent = formatTime(durationInSeconds);
-               seekBar.max = durationInSeconds;
-          }
-      }, 1000);
+
 
     // 音声解析の初期化
     async function initAudioAnalyser() {
@@ -254,5 +242,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateAudioButton() {
         const icon = audioControl.querySelector('i');
         icon.className = audio.paused ? 'fas fa-play' : 'fas fa-pause';
+    }
+
+    // DOMContentLoaded以降に実行されるように、initAudioAnalyserの呼び出しをここに移動
+    init();
+    async function init() {
+         await initAudioAnalyser();
     }
 });
