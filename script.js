@@ -567,7 +567,13 @@ document.addEventListener('DOMContentLoaded', () => {
     //歌詞表示のイベントリスナー
     toggleLyricsButton.addEventListener('click', () => {
         const lyricsOverlay = document.getElementById('lyrics-overlay');
-        lyricsOverlay.style.display = (lyricsOverlay.style.display === 'none') ? 'flex' : 'none';
+        if (lyricsOverlay.style.display === 'none' || lyricsOverlay.style.display === '') {
+            lyricsOverlay.style.display = 'flex';
+            document.body.classList.add('lyrics-visible');
+        } else {
+            lyricsOverlay.style.display = 'none';
+            document.body.classList.remove('lyrics-visible');
+        }
     });
 
      // 再生時間を整形する関数
@@ -723,14 +729,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     scene.addEventListener('targetFound', () => {
         lyricsOverlay.style.display = 'none'; // マーカー認識時、歌詞非表示
+        document.body.classList.remove('lyrics-visible');
         scanningOverlay.classList.add('fade-out');
     });
 
     scene.addEventListener('targetLost', () => {
         if (isLyricsVisible) {
-            lyricsOverlay.style.display = 'block'; // マーカー認識消失時、歌詞表示
+            lyricsOverlay.style.display = 'flex'; // マーカー認識消失時、歌詞表示
+            document.body.classList.add('lyrics-visible');
         } else {
             lyricsOverlay.style.display = 'none'; // マーカー認識消失時、歌詞非表示
+            document.body.classList.remove('lyrics-visible');
         }
         scanningOverlay.classList.remove('fade-out');
     });
@@ -751,6 +760,11 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleLyricsButton.addEventListener('click', () => {
         isLyricsVisible = !isLyricsVisible;
         lyricsOverlay.style.display = isLyricsVisible ? 'flex' : 'none';
+        if (isLyricsVisible) {
+            document.body.classList.add('lyrics-visible');
+        } else {
+            document.body.classList.remove('lyrics-visible');
+        }
         updateLyricsButton();
     });
 
