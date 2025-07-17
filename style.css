@@ -57,10 +57,12 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     word-wrap: break-word;
     font-family: "游ゴシック", YuGothic, "Hiragino Kaku Gothic ProN", Meiryo,
         sans-serif;
+    max-width: 90%;
+    margin-top: 50px;
 }
 
 /* ボタンを横並びにするコンテナ */
