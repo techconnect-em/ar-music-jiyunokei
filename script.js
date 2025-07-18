@@ -75,8 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3D形状の数学的定義と事前計算
     function generateTorusPositions() {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const R = 2; // 主半径
-        const r = 0.8; // 管半径
+        const R = 1.2; // 主半径 (2 → 1.2に縮小)
+        const r = 0.48; // 管半径 (0.8 → 0.48に縮小)
         
         for (let i = 0; i < PARTICLE_COUNT; i++) {
             const u = Math.random() * Math.PI * 2;
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateSpherePositions() {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const R = 2.2;
+        const R = 1.32; // 2.2 → 1.32に縮小
         
         for (let i = 0; i < PARTICLE_COUNT; i++) {
             const lat = Math.random() * Math.PI;
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateLissajousPositions() {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
         const a = 3, b = 5, c = 7;
-        const A = 2, B = 2, C = 2;
+        const A = 1.2, B = 1.2, C = 1.2; // 2 → 1.2に縮小
         const delta1 = Math.PI / 2, delta2 = Math.PI / 4;
         const thicknessRadius = 0.08;
         
@@ -144,8 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateDnaHelixPositions() {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const R = 1.5;
-        const height = 4;
+        const R = 0.9; // 1.5 → 0.9に縮小
+        const height = 2.4; // 4 → 2.4に縮小
         const turns = 3;
         const thicknessRadius = 0.05;
         
@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateFractalCubePositions() {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const size = 2.0;
+        const size = 1.2; // 2.0 → 1.2に縮小
         const levels = 3;
         
         for (let i = 0; i < PARTICLE_COUNT; i++) {
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function generateGalaxySpiralPositions() {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
         const arms = 3;
-        const maxRadius = 3.0;
+        const maxRadius = 1.8; // 3.0 → 1.8に縮小
         const pitch = 0.3;
         
         for (let i = 0; i < PARTICLE_COUNT; i++) {
@@ -232,8 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function generateWaveFormPositions() {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const width = 4.0;
-        const amplitude = 1.5;
+        const width = 2.4; // 4.0 → 2.4に縮小
+        const amplitude = 0.9; // 1.5 → 0.9に縮小
         const frequency = 2.0;
         const waveCount = 5;
         
@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         particleGeometry.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
         
         particleMaterial = new THREE.PointsMaterial({
-            size: 20.0,
+            size: 8.0, // 20.0→8.0に適正化（形状が見やすいサイズ）
             sizeAttenuation: true,
             vertexColors: true,
             blending: THREE.NormalBlending,
@@ -461,6 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         frameSkipCounter = 0;
         
         const time = currentTime * 0.001;
+        
         globalRotation.x += rotationSpeed * 0.7;
         globalRotation.y += rotationSpeed;
         globalRotation.z += rotationSpeed * 0.3;
@@ -471,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         particleSystem.rotation.y = globalRotation.y;
         particleSystem.rotation.z = globalRotation.z;
         
-        const pulseSize = 20.0 + Math.sin(pulsePhase) * 5.0;
+        const pulseSize = 8.0 + Math.sin(pulsePhase) * 3.0;
         particleMaterial.size = pulseSize;
         
         const cycleTime = (currentTime - animationStartTime) % ANIMATION_CYCLE;
